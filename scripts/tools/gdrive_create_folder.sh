@@ -25,18 +25,29 @@ parent="${2:-}"
 [[ -n "$name" ]] || { echo "usage: gdrive_create_folder.sh <folder-name> [parent-folder-id]" >&2; exit 2; }
 ensure_yq
 
+# ask <VAR> <label> <hidden:true|false> — prompt unless already set; trims spaces/newlines.
 ask() {
-  local var="$1" label="$2" value
+  local var="$1" label="$2" hidden="$3" value
   if [[ -z "${!var:-}" ]]; then
     printf '%s: ' "$label" >&2
-    IFS= read -rs value
-    printf '\n' >&2
+    if [[ "$hidden" == "true" ]]; then
+      IFS= read -rs value
+      printf '\n' >&2
+    else
+      IFS= read -r value
+    fi
     printf -v "$var" '%s' "$value"
   fi
+  value="$(printf '%s' "${!var}" | tr -d ' \t\r\n')"
+  printf -v "$var" '%s' "$value"
 }
-ask GDRIVE_OAUTH_CLIENT_ID "OAuth client ID"
-ask GDRIVE_OAUTH_CLIENT_SECRET "OAuth client secret"
-ask GDRIVE_OAUTH_REFRESH_TOKEN "Refresh token"
+ask GDRIVE_OAUTH_CLIENT_ID "OAuth client ID (shown; ends with .apps.googleusercontent.com)" false
+if [[ "$GDRIVE_OAUTH_CLIENT_ID" != *.apps.googleusercontent.com ]]; then
+  die "That is not an OAuth client ID: it must end with .apps.googleusercontent.com. Copy it from Google Cloud → APIs & Services → Credentials → OAuth 2.0 Client IDs." \
+    "SECRETS.md#option-b-your-own-google-account-my-drive"
+fi
+ask GDRIVE_OAUTH_CLIENT_SECRET "OAuth client secret (hidden)" true
+ask GDRIVE_OAUTH_REFRESH_TOKEN "Refresh token (hidden)" true
 
 token="$(google_access_token_from_refresh "$GDRIVE_OAUTH_CLIENT_ID" "$GDRIVE_OAUTH_CLIENT_SECRET" "$GDRIVE_OAUTH_REFRESH_TOKEN")"
 
