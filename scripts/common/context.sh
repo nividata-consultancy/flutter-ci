@@ -78,7 +78,8 @@ resolve_context() {
 
   local branches
   branches="$(cfg_list '.app.prod_branches' | tr '\n' ' ' | sed 's/ *$//')"
-  _ctx PROD_BRANCHES "${branches:-main}"
+  # Empty = prod tags may be on any branch (no prod guard).
+  _ctx PROD_BRANCHES "$branches"
   _ctx RUN_TESTS "$(cfg '.app.run_tests' true)"
   _ctx RUN_ANALYZE "$(cfg '.app.run_analyze' false)"
   _ctx OBFUSCATE "$(cfg '.app.obfuscate' false)"

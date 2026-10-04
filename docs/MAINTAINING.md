@@ -60,7 +60,7 @@ Then fix forward with `v1.3.1`.
 
 One or two internal apps run ahead of everyone else:
 
-- GitHub: `uses: OWNER/flutter-ci/.github/workflows/android-release.yml@main` with
+- GitHub: `uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@main` with
   `ci-lib-ref: main`.
 - Xcode Cloud: `FLUTTER_CI_REF=main`.
 
@@ -80,13 +80,14 @@ Use the last SHA (the peeled one, `^{}`, for annotated tags) and update the
 comment. Check the action's changelog for breaking input changes. The
 `actionlint` version in `self-test.yml` is pinned the same way.
 
-## Replacing `OWNER`
+## Moving the repository
 
-The code uses the placeholder `OWNER` for the GitHub owner of this repository.
-After forking or publishing, replace it everywhere in one go:
+The owner `nividata-consultancy` is written into the workflow, the bootstraps, the
+templates and the doc links. If the repository moves to another owner, replace it
+everywhere in one go and update every app's `uses:` line:
 
 ```bash
-git grep -l 'OWNER/flutter-ci' | xargs sed -i '' 's#OWNER/flutter-ci#your-org/flutter-ci#g'   # macOS sed
+git grep -l 'nividata-consultancy/flutter-ci' | xargs sed -i '' 's#nividata-consultancy/flutter-ci#your-org/flutter-ci#g'   # macOS sed
 ```
 
 ## Migrations

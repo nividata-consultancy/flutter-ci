@@ -11,7 +11,7 @@
 if [[ -n "${_FLUTTER_CI_LOG_SH:-}" ]]; then return 0; fi
 _FLUTTER_CI_LOG_SH=1
 
-FLUTTER_CI_DOCS_BASE="${FLUTTER_CI_DOCS_BASE:-https://github.com/OWNER/flutter-ci/blob/v1/docs}"
+FLUTTER_CI_DOCS_BASE="${FLUTTER_CI_DOCS_BASE:-https://github.com/nividata-consultancy/flutter-ci/blob/v1/docs}"
 
 _is_github() { [[ "${GITHUB_ACTIONS:-}" == "true" ]]; }
 

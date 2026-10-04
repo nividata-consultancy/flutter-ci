@@ -1,6 +1,7 @@
-# Release builds via flutter-ci (https://github.com/OWNER/flutter-ci).
-#   git tag v1.4.0-beta.1 && git push origin v1.4.0-beta.1   -> UAT
-#   git tag v1.4.0        && git push origin v1.4.0          -> prod (commit must be on main)
+# Release builds via flutter-ci (https://github.com/nividata-consultancy/flutter-ci).
+#   git tag -a v1.4.0-beta.1 -m "notes for testers" && git push origin v1.4.0-beta.1   -> UAT
+#   git tag -a v1.4.0 -m "notes for testers"        && git push origin v1.4.0          -> prod
+# The tag message becomes the release notes (TestFlight, Firebase, Play).
 #
 # Secrets are passed one by one on purpose: `secrets: inherit` does not work
 # across organizations. Delete lines for destinations you do not use.
@@ -15,7 +16,7 @@ permissions:
 
 jobs:
   android:
-    uses: OWNER/flutter-ci/.github/workflows/android-release.yml@v1
+    uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v1
     with:
       ci-lib-ref: v1 # keep equal to the @ref above
       # config-path: .ci/config.yaml

@@ -31,7 +31,7 @@ changes are breaking and ship in a new major version (`v2`), with migration note
 | `name` | string | **required** | Short app name, used in artifact names, release names and notifications. |
 | `flutter_version_file` | `.fvmrc` \| `pubspec.yaml` | auto | Where the Flutter version is pinned. See [Flutter version](#flutter-version). |
 | `java_version` | string/int | `"17"` | JDK major version for Gradle (Temurin). |
-| `prod_branches` | list | `[main]` | Prod tags must be on a commit reachable from one of these. |
+| `prod_branches` | list | none | Optional. When set, prod tags must be on a commit reachable from one of these branches. When unset, prod tags build from any branch. |
 | `build_number_offset` | int ≥ 0 | `0` | Android versionCode = GitHub run number + offset. |
 | `run_tests` | bool | `true` | Run `flutter test` (if `test/` exists) before building Android. |
 | `run_analyze` | bool | `false` | Run `flutter analyze` before building Android. |
@@ -131,7 +131,7 @@ app:
   name: MyApp
   flutter_version_file: .fvmrc
   java_version: "17"
-  prod_branches: [main]
+  # prod_branches: [main]   # optional prod guard
   build_number_offset: 0
   run_tests: true
   run_analyze: false

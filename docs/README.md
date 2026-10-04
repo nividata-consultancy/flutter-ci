@@ -18,12 +18,12 @@ app.
 ## How it works
 
 ```
- app repo (any GitHub org)                          OWNER/flutter-ci (public)
+ app repo (any GitHub org)                          nividata-consultancy/flutter-ci (public)
  ─────────────────────────                          ─────────────────────────
  git push origin v1.4.0-beta.1
    │
    ├─ GitHub Actions: .github/workflows/release.yml
-   │     uses: OWNER/flutter-ci/.github/workflows/android-release.yml@v1 ──► reusable workflow
+   │     uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v1 ──► reusable workflow
    │     secrets passed one by one                                           ├ checks out flutter-ci@ci-lib-ref → .flutter-ci/
    │                                                                         ├ scripts/common: tag, config, prod guard
    │                                                                         ├ build AAB/APK
@@ -47,7 +47,7 @@ app.
 
 In a reusable workflow, `uses: ./actions/foo` resolves against the **caller's**
 repository, not against flutter-ci. `android-release.yml` therefore checks out
-`OWNER/flutter-ci` at the `ci-lib-ref` input into `.flutter-ci/` (sparse: only
+`nividata-consultancy/flutter-ci` at the `ci-lib-ref` input into `.flutter-ci/` (sparse: only
 `actions/` and `scripts/`) and uses `./.flutter-ci/actions/...` and
 `./.flutter-ci/scripts/...`. Keep `ci-lib-ref` equal to the `@ref` in the `uses:`
 line, so that the workflow, its actions and its scripts always come from the same version.

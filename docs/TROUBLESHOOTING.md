@@ -17,7 +17,7 @@ Every flutter-ci error links to a section here. Errors look like
   git ls-files -s ios/ci_scripts   # both lines must start with 100755
   ```
 - `curl: (22) … 404` while downloading flutter-ci means `FLUTTER_CI_REF` names a
-  ref that doesn't exist, or `OWNER` in the bootstrap was not replaced.
+  ref that doesn't exist (e.g. a typo, or a tag not pushed yet).
 - `ci_post_clone.sh did not finish` in the post-xcodebuild step means the clone
   step failed earlier. Scroll up to the first `ERROR:`.
 
@@ -65,8 +65,9 @@ not compatible.
 
 `Prod guard: commit abc1234 is not on any prod branch (main)`.
 
-Prod tags (`vX.Y.Z`) must point to a commit that is already on a prod branch
-(`app.prod_branches`, default `main`).
+This only happens when the app sets `app.prod_branches`. Prod tags (`vX.Y.Z`)
+must then point to a commit that is already on one of those branches. To allow
+prod tags from any branch, remove `prod_branches` from `.ci/config.yaml`.
 
 ```bash
 git push --delete origin v1.4.0 && git tag -d v1.4.0

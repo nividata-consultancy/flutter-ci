@@ -3,7 +3,8 @@
 # ios/ci_scripts/ci_post_clone.sh).
 #
 #  1. Require CI_TAG (the workflow must start on Tag Changes).
-#  2. Parse tag, validate .ci/config.yaml, run the prod guard.
+#  2. Parse tag, validate .ci/config.yaml, run the prod guard (if
+#     app.prod_branches is set).
 #  3. Install Flutter at the app's pinned version, precache, pub get.
 #  4. Dart defines from the repo or DART_DEFINES_<ENV>_JSON_BASE64.
 #  5. Generate ios/Flutter/Environment.xcconfig, copy GoogleService-Info.plist.
@@ -90,7 +91,7 @@ main() {
   local commit="${CI_COMMIT:-$(git rev-parse HEAD)}"
   log_info "[$ENV_LABEL] $TAG → version $VERSION_NAME ($build_number), Flutter $FLUTTER_VERSION"
 
-  if [[ "$ENVIRONMENT" == "prod" ]]; then
+  if [[ "$ENVIRONMENT" == "prod" && -n "$PROD_BRANCHES" ]]; then
     log_step "Prod guard"
     # shellcheck disable=SC2086 # space-separated list
     prod_guard "$commit" $PROD_BRANCHES || exit 1

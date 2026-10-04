@@ -33,7 +33,7 @@ Re-check the items marked *unverified* when something behaves differently.
 
 ## Design decisions (where the brief left room)
 
-1. **`OWNER` placeholder** is used literally everywhere. MAINTAINING.md has a one-line `sed` to replace it.
+1. **Repository owner** is `nividata-consultancy` (public repo `nividata-consultancy/flutter-ci`). MAINTAINING.md explains how to change it if the repo moves.
 2. **bash 3.2 compatibility** is treated as a hard requirement, because Xcode Cloud runs macOS `/bin/bash`. All scripts use `#!/bin/bash`, and the bats suite also runs on macOS.
 3. **All secrets in `android-release.yml` are `required: false`**, including the keystore. This lets `self-test.yml` run a dry-run build of `example/` without secrets (forks have none). The workflow enforces the keystore secrets at runtime unless `dry-run: true`, and enforces destination secrets only for configured destinations, each with a pointer to SECRETS.md.
 4. **Extra workflow inputs beyond the brief:** `ci-lib-repository` (forks and self-test of PRs from forks), `app-directory` (monorepos and `example/`), `tag` (simulate a tag, **only honored with `dry-run: true`**, so it cannot bypass the tag-only rule), and `timeout-minutes`.
@@ -53,4 +53,6 @@ Re-check the items marked *unverified* when something behaves differently.
 12. **Tests and analyze run on GitHub only.** iOS does not repeat them.
 13. **Android artifacts are named** `<App>-<env>-<versionName>-<versionCode>.{aab,apk}`, plus `-mapping.txt` and `-debug-symbols.zip` when available.
 14. **The Flutter install on Xcode Cloud never deletes** an existing SDK directory. If `~/flutter` exists with a different version, the build stops with an error.
-15. **Tagging `v1.0.0` / `v1`:** created locally only. No remote was configured, so nothing was pushed.
+15. **Tagging `v1.0.0` / `v1`:** created locally only; push them when the remote is reachable.
+16. **Prod guard is opt-in** (changed on request): prod tags build from any branch unless `app.prod_branches` is set.
+17. **Release notes come from the annotated tag message** (requested), with commit subjects as fallback. On GitHub the tag object is re-fetched with the job token, because `actions/checkout` may store tags as lightweight refs and credentials are not persisted.

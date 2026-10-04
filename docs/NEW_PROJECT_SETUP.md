@@ -3,10 +3,10 @@
 A copy-paste checklist that takes a Flutter app to working CI. Work through it
 top to bottom; most steps take a few minutes. When you are done, pushing
 `v0.1.0-beta.1` produces an Android UAT build on Play internal testing and an
-iOS UAT build in TestFlight labeled `[UAT]`, and pushing `v0.1.0` from `main`
+iOS UAT build in TestFlight labeled `[UAT]`, and pushing `v0.1.0`
 produces `[PROD]` builds in both places.
 
-Paths below are relative to your app repo. `OWNER/flutter-ci` is this
+Paths below are relative to your app repo. `nividata-consultancy/flutter-ci` is this
 repository.
 
 ## Before you start
@@ -26,7 +26,7 @@ From a checkout of `flutter-ci` (or download the files from GitHub):
 
 ```bash
 APP=~/src/my-app                     # your app repo
-CI=~/src/flutter-ci                  # a checkout of OWNER/flutter-ci
+CI=~/src/flutter-ci                  # a checkout of nividata-consultancy/flutter-ci
 
 mkdir -p "$APP/.github/workflows" "$APP/.ci" "$APP/ios/ci_scripts"
 cp "$CI/templates/.github/workflows/release.yml"   "$APP/.github/workflows/release.yml"
@@ -202,10 +202,12 @@ Follow [XCODE_CLOUD_SETUP.md](XCODE_CLOUD_SETUP.md). In short:
 
 ## 7. First test build (UAT)
 
-Commit everything and push to `main`. Then:
+Commit everything and push. Then create an **annotated** tag. Its message
+becomes the release notes testers see in TestFlight, Firebase and Play:
 
 ```bash
-git tag v0.1.0-beta.1
+git tag -a v0.1.0-beta.1 -m "First CI build
+Please check login and the home screen"
 git push origin v0.1.0-beta.1
 ```
 
@@ -224,9 +226,10 @@ Tip: to test the Android side without distributing anything, temporarily set
 
 ## 8. First prod build
 
+Tag the commit QA approved. Any branch works, unless you set `app.prod_branches`:
+
 ```bash
-git checkout main && git pull
-git tag v0.1.0
+git tag -a v0.1.0 -m "First release"
 git push origin v0.1.0
 ```
 
@@ -236,6 +239,6 @@ them manually as described in [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#
 ## Done checklist
 
 - [ ] `v0.1.0-beta.1` gives an Android UAT build on Play internal and an iOS `[UAT]` build in TestFlight
-- [ ] `v0.1.0` from `main` gives `[PROD]` builds in both places
-- [ ] A `v0.1.1` tag on a non-main branch is **rejected** by the prod guard (optional sanity check; delete the tag afterwards)
+- [ ] `v0.1.0` gives `[PROD]` builds in both places
+- [ ] Testers see your tag message as the release notes (TestFlight "What to Test", Firebase, Play)
 - [ ] The team knows the rules in [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md)

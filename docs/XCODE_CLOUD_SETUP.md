@@ -92,10 +92,10 @@ Push a tag such as `v0.1.0-beta.1`. In the build log, check:
 
 1. Xcode Cloud clones the repo and runs `ios/ci_scripts/ci_post_clone.sh`, the
    ~10-line bootstrap. It downloads
-   `https://codeload.github.com/OWNER/flutter-ci/tar.gz/$FLUTTER_CI_REF` into
+   `https://codeload.github.com/nividata-consultancy/flutter-ci/tar.gz/$FLUTTER_CI_REF` into
    `$CI_PRIMARY_REPOSITORY_PATH/.flutter-ci` and runs
    `scripts/xcode-cloud/post_clone.sh`. That script:
-   - checks the tag, the config and the prod guard;
+   - checks the tag and the config, and runs the prod guard if `app.prod_branches` is set;
    - installs Flutter at the pinned version into `~/flutter`, then runs `precache` and `pub get`;
    - resolves the dart defines and writes `ios/Flutter/Environment.xcconfig`;
    - copies `GoogleService-Info.plist`;

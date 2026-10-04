@@ -12,7 +12,10 @@ in [docs/MAINTAINING.md](docs/MAINTAINING.md#migrations).
 - Tag convention: `vX.Y.Z-beta.N` → UAT, `vX.Y.Z` → prod, single parser for
   GitHub Actions and Xcode Cloud (`scripts/common/parse_tag.sh`).
 - `.ci/config.yaml` schema version 1 with fail-fast validation.
-- Prod guard (prod tags must be on a prod branch), shallow-clone safe.
+- Optional prod guard (`app.prod_branches`): when set, prod tags must be on one of
+  those branches; when unset, prod tags build from any branch. Shallow-clone safe.
+- Release notes from the annotated tag message (`git tag -a … -m …`), falling
+  back to commit subjects; used for TestFlight, Firebase, Play and GitHub Releases.
 - Reusable Android workflow `android-release.yml` with composite actions:
   setup-flutter, android-signing, distribute-playstore, distribute-firebase,
   distribute-drive, notify. Dry-run mode.

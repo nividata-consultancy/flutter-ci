@@ -10,9 +10,9 @@ A guide for app developers. Builds start **only** when you push a tag.
 | `vX.Y.Z` | **prod** | `v1.4.0` | Play internal track, TestFlight (labeled `[PROD]`) |
 | anything else starting with `v` | build fails | `v1.4`, `v1.4.0-rc1` | nothing |
 
-- UAT tags can be on **any branch**.
-- Prod tags must be on a commit that is already on a prod branch (default `main`,
-  set in `app.prod_branches`). Otherwise the **prod guard** fails the build.
+- UAT and prod tags can be on **any branch**.
+- Optional **prod guard**: if the app sets `app.prod_branches` (e.g. `[main]`),
+  prod tags must be on a commit already on one of those branches, otherwise the build fails.
 - UAT and prod use the same app ID / bundle ID. Both are uploaded for testing
   only. CI never submits for review and never releases to users.
 
@@ -27,10 +27,32 @@ Because the iOS version is the same for UAT and prod, TestFlight's
 **What to Test** starts with `[UAT] v1.4.0-beta.1 · abc1234` or
 `[PROD] v1.4.0 · abc1234`. Play release names carry the same label.
 
+## Release notes for testers
+
+Write the notes in the **tag message** by creating an annotated tag with `-a`:
+
+```bash
+git tag -a v1.4.0-beta.1 -m "Login crash fixed
+Dark mode added, please test on iPad"
+```
+
+The message is shown, after the `[UAT] v1.4.0-beta.1 · abc1234` header line, in:
+
+| Where | Limit |
+|---|---|
+| TestFlight "What to Test" | 1,000 bytes |
+| Firebase App Distribution release notes | 500 bytes (Android), 1,000 bytes (iOS) |
+| Play Console "What's new" | 500 characters |
+| GitHub Release body (with the commit list added below) | 4,000 bytes |
+
+A plain tag without a message (`git tag v1.4.0-beta.1`) works too. The notes are then
+the latest commit subjects since the previous tag. Keep the important part of
+the message at the top, because longer messages are cut at the limits above.
+
 ## Cutting a UAT build
 
 ```bash
-git tag v1.4.0-beta.1           # on the commit you want QA to test
+git tag -a v1.4.0-beta.1 -m "What testers should check"   # on the commit QA should test
 git push origin v1.4.0-beta.1
 ```
 
@@ -38,18 +60,15 @@ For the next UAT build of the same version, bump N: `v1.4.0-beta.2`.
 
 ## Cutting a prod build
 
-When QA approves a UAT build, tag the **same commit** (it must be on `main`):
+When QA approves a UAT build, tag the **same commit**:
 
 ```bash
-git checkout main && git pull
-git log --oneline -1 v1.4.0-beta.3   # the approved commit
-git tag v1.4.0 v1.4.0-beta.3^{}      # tag that exact commit
+git tag -a v1.4.0 -m "Release notes for this version" v1.4.0-beta.3^{}   # the approved commit
 git push origin v1.4.0
 ```
 
-If the approved commit is on a feature branch, merge it into `main` first,
-then tag the merge result. The merged code should be what QA tested; if it
-differs, cut another beta.
+Any branch works. If the app sets `app.prod_branches`, the commit must
+already be on one of those branches (merge first, then tag the merged commit).
 
 ## Promoting to production
 
@@ -86,5 +105,5 @@ carry the UAT name and icon, and have pre-release version names. Always check th
 
 ## Hotfixes
 
-To release from a maintenance branch, add it to `app.prod_branches`, e.g.
-`[main, "release/1.4"]`. Tag `v1.4.1` on that branch.
+Tag `v1.4.1` on the hotfix branch. If the app uses `app.prod_branches`, add the
+branch to it, e.g. `[main, "release/1.4"]`.

@@ -22,7 +22,7 @@ on:
       ci-lib-repository:
         description: Repository of flutter-ci (change only for forks).
         type: string
-        default: OWNER/flutter-ci
+        default: nividata-consultancy/flutter-ci
       config-path:
         description: Path of the config file, relative to app-directory.
         type: string
@@ -146,8 +146,8 @@ jobs:
           DRY_RUN: ${{ inputs.dry-run }}
         run: '"$FLUTTER_CI/scripts/android/resolve.sh"'
 
-      - name: Prod guard
-        if: steps.ctx.outputs.ENVIRONMENT == 'prod'
+      - name: Prod guard (only when app.prod_branches is set)
+        if: steps.ctx.outputs.ENVIRONMENT == 'prod' && steps.ctx.outputs.PROD_BRANCHES != ''
         env:
           PROD_BRANCHES: ${{ steps.ctx.outputs.PROD_BRANCHES }}
         run: |
@@ -218,15 +218,22 @@ jobs:
           path: ${{ inputs.app-directory }}/${{ steps.build.outputs.ARTIFACTS_DIR }}
           if-no-files-found: error
 
-      - name: Release notes
+      - name: Release notes (tag message, else commits)
         id: notes
         env:
           TAG: ${{ steps.ctx.outputs.TAG }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           dir="$RUNNER_TEMP/flutter-ci"
           mkdir -p "$dir"
+          # Fetch the annotated tag object (its message is the release notes).
+          # Credentials are not persisted by checkout, so pass the job token once.
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          echo "::add-mask::$auth"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+            fetch --quiet --force --no-tags origin "+refs/tags/$TAG:refs/tags/$TAG" || true
           "$FLUTTER_CI/scripts/common/release_notes.sh" "$TAG" --max-bytes 500 --max-commits 5 > "$dir/notes-short.txt"
-          "$FLUTTER_CI/scripts/common/release_notes.sh" "$TAG" --max-bytes 4000 --max-commits 30 > "$dir/notes-long.txt"
+          "$FLUTTER_CI/scripts/common/release_notes.sh" "$TAG" --max-bytes 4000 --max-commits 30 --with-commits > "$dir/notes-long.txt"
           cat "$dir/notes-long.txt"
           echo "short=$dir/notes-short.txt" >> "$GITHUB_OUTPUT"
           echo "long=$dir/notes-long.txt" >> "$GITHUB_OUTPUT"
