@@ -80,6 +80,20 @@ git checkout main && git pull && git tag v1.4.0 && git push origin v1.4.0
   `origin`. Check that the Xcode Cloud GitHub app still has access to the repository.
 - For hotfix branches, add them to `prod_branches`.
 
+## Drive upload fails
+
+`Drive: no answer from Google while starting the upload / sending the file (HTTP 000)`
+means the connection failed. The message includes curl's own error:
+
+- `Could not resolve host` / `Connection timed out`: a temporary network problem
+  on the runner. The script already retries 3 times; push a new tag to try again.
+- `Operation timed out` while sending the file: the upload took longer than 30
+  minutes. Upload only the APK by setting `artifacts: [apk]`, or check the runner's network.
+- `URL rejected` / `No URL set`: Google returned no upload address. Report it with the log.
+
+Other `Drive: upload failed (HTTP 4xx/5xx …)` messages include Google's reason.
+`401`/`403` usually means the token or the folder permissions; see below.
+
 ## Drive: storage quota exceeded
 
 `Drive: storage quota exceeded` / `storageQuotaExceeded` / `notFound` / `invalid_grant`.
