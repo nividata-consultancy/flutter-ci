@@ -1,1 +1,4 @@
 #include "Generated.xcconfig"
+
+APP_DISPLAY_NAME = Example Dev
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon

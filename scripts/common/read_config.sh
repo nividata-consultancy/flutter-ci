@@ -211,9 +211,14 @@ _cfg_validate_android() {
 _cfg_validate_ios() {
   local p=".environments.$1.ios" label="environments.$1.ios"
   _cfg_expect_type "$p" "$label" '!!map' || return 0
-  _cfg_known_keys "$p" "$label" display_name app_icon google_service_info build_settings destinations
+  _cfg_known_keys "$p" "$label" display_name app_icon google_service_info build_settings target destinations
 
-  _cfg_expect_type "$p.display_name" "$label.display_name" '!!str' || true
+  if _cfg_expect_type "$p.display_name" "$label.display_name" '!!str'; then
+    [[ "$(cfg "$p.display_name")" != *"//"* ]] || _cfg_err "$label.display_name must not contain '//' (it starts a comment in .xcconfig files)"
+  fi
+  if _cfg_expect_type "$p.target" "$label.target" '!!str'; then
+    [[ "$(cfg "$p.target")" == *.dart ]] || _cfg_err "$label.target must point to a .dart file"
+  fi
   if _cfg_expect_type "$p.app_icon" "$label.app_icon" '!!str'; then
     [[ "$(cfg "$p.app_icon")" =~ ^[A-Za-z0-9_-]+$ ]] \
       || _cfg_err "$label.app_icon must be an asset catalog icon set name like 'AppIcon-UAT'"

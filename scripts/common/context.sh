@@ -109,6 +109,7 @@ resolve_context() {
     _ctx IOS_DISPLAY_NAME "$(cfg "$i.display_name")"
     _ctx IOS_APP_ICON "$(cfg "$i.app_icon")"
     _ctx IOS_GOOGLE_SERVICE_INFO "$(cfg "$i.google_service_info")"
+    _ctx IOS_TARGET "$(cfg "$i.target")"
     _ctx_destinations "$i.destinations"
   fi
 }
