@@ -100,7 +100,7 @@ Android only. There are two ways to give CI access to a Drive folder. Pick one.
 
 | | Option A: service account | Option B: your own Google account |
 |---|---|---|
-| Folder | Must be in a **Shared Drive** | Any folder in **your My Drive** |
+| Folder | Must be in a **Shared Drive** | A folder created with the helper in the account's **My Drive** |
 | Needs | Google Workspace (company account) | Any Google account, including free Gmail |
 | Storage used | The Shared Drive's | Your account's |
 | Secrets | `GDRIVE_SERVICE_ACCOUNT_JSON` | `GDRIVE_OAUTH_CLIENT_ID`, `GDRIVE_OAUTH_CLIENT_SECRET`, `GDRIVE_OAUTH_REFRESH_TOKEN` |
@@ -125,40 +125,58 @@ shared with the service account.
 
 ### Option B: your own Google account (My Drive)
 
-CI uploads **as you**, using a refresh token you create once in the browser.
+CI uploads **as a Google account**, using a refresh token you create once.
 
-1. **Cloud project:** https://console.cloud.google.com → create or pick a project →
-   **APIs & Services → Library → Google Drive API → Enable**.
+Two safety rules:
+- **Use a dedicated Google account for builds** (e.g. a new `yourcompany.builds@gmail.com`),
+  not a person's own account. Builds then don't stop when someone leaves, and the
+  team gets access by sharing the folder.
+- **Use the limited scope `drive.file`.** The token can then only see files and folders
+  that CI created, never anything else in that Drive. That's why the folder is
+  created with a helper command (step 5), not by hand.
+
+1. **Cloud project:** signed in as the builds account, open https://console.cloud.google.com →
+   create a project (e.g. `flutter-ci-uploads`) → **APIs & Services → Library →
+   Google Drive API → Enable**.
 2. **Consent screen:** **APIs & Services → OAuth consent screen** (also called
    *Google Auth Platform*):
-   - Get started → App name `flutter-ci uploads`, your email → **Audience: External** → create.
+   - Get started → App name `flutter-ci uploads`, the builds account's email →
+     **Audience: External** → create.
    - **Audience → Publish app** so the status is **In production**. In "Testing"
-     status, Google expires refresh tokens after 7 days. Verification is **not** needed
-     for your own use; you just see a "Google hasn't verified this app" warning once.
+     status Google expires refresh tokens after 7 days. `drive.file` is a
+     non-sensitive scope, so no Google verification is needed.
 3. **OAuth client:** **APIs & Services → Credentials → Create credentials → OAuth
    client ID** → type **Web application** → under **Authorized redirect URIs** add
    `https://developers.google.com/oauthplayground` → **Create**. Copy the
    **Client ID** and **Client secret**.
-4. **Get the refresh token:** open https://developers.google.com/oauthplayground
+4. **Refresh token:** open https://developers.google.com/oauthplayground
    - ⚙️ (top right) → tick **Use your own OAuth credentials** → paste the client ID and secret.
-   - Left side, in **"Input your own scopes"**, type `https://www.googleapis.com/auth/drive` → **Authorize APIs**.
-   - Sign in with the Google account whose Drive should receive the builds. On
-     "Google hasn't verified this app", click **Advanced → Go to flutter-ci uploads (unsafe)** → **Continue / Allow**.
+   - Left side, in **"Input your own scopes"**, type
+     `https://www.googleapis.com/auth/drive.file` → **Authorize APIs**.
+   - Sign in with the **builds account** → **Continue / Allow**. If a "Google hasn't
+     verified this app" screen appears, click **Advanced → Go to flutter-ci uploads**.
    - Click **Exchange authorization code for tokens**. Copy the **Refresh token**.
-5. **Folder:** in that account's Drive, create a folder (e.g. `App Builds/MyApp UAT`)
-   and open it. Copy the ID from the URL (`.../folders/<FOLDER_ID>`) into
-   `destinations.drive.folder_id`.
+5. **Create the build folder** with the helper (from a checkout of flutter-ci). It asks for the
+   three values from steps 3–4, without showing them:
+   ```bash
+   ~/path/to/flutter-ci/scripts/tools/gdrive_create_folder.sh "MyApp builds"
+   ```
+   It prints the `folder_id`. Put it in `destinations.drive.folder_id`. To see the builds,
+   open the printed link (signed in as the builds account) and **Share** the folder
+   with yourself and your team. Create one folder per app, or per app and environment.
 6. **GitHub secrets** (in the app folder):
    ```bash
    gh secret set GDRIVE_OAUTH_CLIENT_ID      # paste the client ID
    gh secret set GDRIVE_OAUTH_CLIENT_SECRET  # paste the client secret
    gh secret set GDRIVE_OAUTH_REFRESH_TOKEN  # paste the refresh token
    ```
+   The app's `.github/workflows/release.yml` must pass these three secrets
+   (they are in the template since v1.1.0).
 
-The refresh token keeps working until you remove the app's access
-(https://myaccount.google.com/permissions), it goes unused for 6 months, or the
-client secret is deleted. If uploads fail with `invalid_grant`, repeat step 4 and
-update `GDRIVE_OAUTH_REFRESH_TOKEN`. One client and token can be reused for all apps.
+The same client, token and builds account can be reused for all apps. The token keeps
+working until access is removed (https://myaccount.google.com/permissions on the
+builds account), it goes unused for 6 months, or the client secret is deleted. If
+uploads fail with `invalid_grant`, repeat step 4 and update `GDRIVE_OAUTH_REFRESH_TOKEN`.
 
 Uploads use the Drive v3 API directly. They need only `curl`, `openssl` and `yq`.
 

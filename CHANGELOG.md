@@ -12,7 +12,9 @@ in [docs/MAINTAINING.md](docs/MAINTAINING.md#migrations).
 - Google Drive uploads as your own Google account (OAuth refresh token):
   new optional secrets `GDRIVE_OAUTH_CLIENT_ID`, `GDRIVE_OAUTH_CLIENT_SECRET`,
   `GDRIVE_OAUTH_REFRESH_TOKEN`. Works with any My Drive folder, no Shared Drive
-  or Google Workspace needed. The service account method is unchanged.
+  or Google Workspace needed. Recommended with a dedicated builds account and the
+  limited `drive.file` scope; `scripts/tools/gdrive_create_folder.sh` creates the
+  target folder. The service account method is unchanged.
 
 ## [1.0.0] - 2026-10-04
 

@@ -90,8 +90,9 @@ git checkout main && git pull && git tag v1.4.0 && git push origin v1.4.0
   shared with the service account is **not** enough. If you have no Shared Drive,
   use your own account instead (Option B).
 - **Your own account (`GDRIVE_OAUTH_*`):** `storageQuotaExceeded` means that
-  account's Drive is full. `notFound` means the folder ID is wrong, or the folder
-  belongs to another account that hasn't given you edit access. `invalid_grant`
+  account's Drive is full. `notFound` usually means the folder was created by hand. With the
+  `drive.file` scope CI only sees folders it created, so create the folder with
+  `scripts/tools/gdrive_create_folder.sh`. It can also mean the folder ID is wrong. `invalid_grant`
   means the refresh token expired or was revoked (or the consent screen is still
   in "Testing", where tokens last 7 days). Create a new one.
 
