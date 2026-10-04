@@ -21,7 +21,7 @@ environments:
       # target: lib/main.dart
       artifacts: [aab, apk]           # aab | apk
       destinations:                   # builds go only where enabled: true
-        playstore: { enabled: true,  track: internal }                   # Play internal testing
+        playstore: { enabled: true,  tracks: [internal] }                # Play internal testing
         firebase:  { enabled: false, groups: "qa-team" }                 # Firebase App Distribution (tag message = release notes)
         drive:     { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }  # Google Shared Drive folder
     ios:                              # iOS always goes to TestFlight (Xcode Cloud), nowhere else
@@ -35,7 +35,9 @@ environments:
     android:
       artifacts: [aab]
       destinations:
-        playstore: { enabled: true,  track: internal, production: true }  # internal testing + DRAFT production release
+        # tracks: [internal] = internal only, [production] = production only (draft),
+        #         [internal, production] = both. Production is always a DRAFT.
+        playstore: { enabled: true,  tracks: [internal, production] }
         firebase:  { enabled: false, groups: "qa-team" }
         drive:     { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }
     ios:

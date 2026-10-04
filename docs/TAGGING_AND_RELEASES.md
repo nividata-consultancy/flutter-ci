@@ -7,7 +7,7 @@ A guide for app developers. Builds start **only** when you push a tag.
 | Tag | Environment | Example | Goes to |
 |---|---|---|---|
 | `vX.Y.Z-beta.N` | **UAT** | `v1.4.0-beta.1` | Android: the destinations with `enabled: true` in `environments.uat` (Play internal testing, Firebase, Drive). iOS: TestFlight |
-| `vX.Y.Z` | **prod** | `v1.4.0` | Android: the destinations with `enabled: true` in `environments.prod` (Play internal testing + optional draft production release, Firebase, Drive). iOS: TestFlight |
+| `vX.Y.Z` | **prod** | `v1.4.0` | Android: the destinations with `enabled: true` in `environments.prod` (Play internal testing and/or a draft production release, Firebase, Drive). iOS: TestFlight |
 | anything else starting with `v` | build fails | `v1.4`, `v1.4.0-rc1` | nothing |
 
 - UAT and prod tags can be on **any branch**.
@@ -97,10 +97,10 @@ CI stops at testing tracks. A release manager promotes manually:
 3. Submit for review and release when ready.
 
 **Android (Play Console)**
-- With `production: true`: go to **Production → Releases**, open the draft
+- With `production` in `playstore.tracks`: go to **Production → Releases**, open the draft
   `[PROD] 1.4.0 (N)`, review it, set the rollout percentage and press **Release**
   (Play then reviews it).
-- Without it: go to **Testing → Internal testing**, find `[PROD] 1.4.0 (N)` and
+- With `[internal]` only: go to **Testing → Internal testing**, find `[PROD] 1.4.0 (N)` and
   choose **Promote release → Production**.
 
 ### The one rule

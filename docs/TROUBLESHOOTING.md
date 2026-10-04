@@ -112,7 +112,7 @@ then remove `status`.
 `… (HTTP 400/409)`: the production track already has a draft or an in-review
 release that conflicts. Open Play Console → Production, finish or discard it, then
 push a new tag. While the app is still a **draft app**, production releases are not
-possible yet. Remove `production: true` until the first release is published.
+possible yet. Remove `production` from `playstore.tracks` until the first release is published.
 
 ## Firebase upload fails
 

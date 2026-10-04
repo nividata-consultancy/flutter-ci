@@ -166,27 +166,30 @@ _cfg_validate_android() {
   # Every destination needs an explicit `enabled: true|false`. Disabled
   # destinations keep their settings but are neither checked nor used.
   if cfg_has "$d.playstore" && _cfg_expect_type "$d.playstore" "$dl.playstore" '!!map'; then
-    _cfg_known_keys "$d.playstore" "$dl.playstore" enabled track status production
+    _cfg_known_keys "$d.playstore" "$dl.playstore" enabled tracks status
     if _cfg_dest_enabled "$d.playstore" "$dl.playstore"; then
-      if _cfg_expect_type "$d.playstore.track" "$dl.playstore.track" '!!str'; then
-        local track
-        track="$(cfg "$d.playstore.track")"
-        if [[ "$track" == "production" ]]; then
-          _cfg_err "$dl.playstore.track must be a testing track (e.g. internal). For production use 'production: true' (prod environment only), which creates a draft release"
-        elif [[ ! "$track" =~ ^[A-Za-z0-9_:-]+$ ]]; then
-          _cfg_err "$dl.playstore.track '$track' is not a valid track name"
-        fi
+      if ! cfg_has "$d.playstore.tracks"; then
+        _cfg_err "$dl.playstore.tracks is required, e.g. [internal], [production] or [internal, production]"
+      elif _cfg_expect_type "$d.playstore.tracks" "$dl.playstore.tracks" '!!seq'; then
+        local t n_testing=0 n_total=0
+        while IFS= read -r t; do
+          n_total=$((n_total + 1))
+          if [[ "$t" == "production" ]]; then
+            [[ "$env" == "prod" ]] || _cfg_err "$dl.playstore.tracks: 'production' is only allowed in the prod environment"
+          elif [[ "$t" =~ ^[A-Za-z0-9_:-]+$ ]]; then
+            n_testing=$((n_testing + 1))
+          else
+            _cfg_err "$dl.playstore.tracks: '$t' is not a valid track name"
+          fi
+        done < <(cfg_list "$d.playstore.tracks")
+        [[ $n_total -gt 0 ]] || _cfg_err "$dl.playstore.tracks must list at least one track"
+        [[ $n_testing -le 1 ]] || _cfg_err "$dl.playstore.tracks: list at most one testing track (e.g. internal), optionally plus production"
       fi
       if _cfg_expect_type "$d.playstore.status" "$dl.playstore.status" '!!str'; then
         case "$(cfg "$d.playstore.status")" in
           completed | draft) ;;
           *) _cfg_err "$dl.playstore.status must be 'completed' or 'draft'" ;;
         esac
-      fi
-      if _cfg_expect_type "$d.playstore.production" "$dl.playstore.production" '!!bool'; then
-        if [[ "$env" != "prod" && "$(cfg "$d.playstore.production")" == "true" ]]; then
-          _cfg_err "$dl.playstore.production is only allowed in the prod environment"
-        fi
       fi
       [[ $has_aab -eq 1 ]] || _cfg_err "$dl.playstore needs 'aab' in $label.artifacts (Play only accepts app bundles)"
       cfg_has '.app.android_package_name' \

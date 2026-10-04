@@ -82,13 +82,16 @@ resolve_context() {
     _ctx ANDROID_ARTIFACTS "${artifacts:-aab}"
     local dest="$a.destinations"
     _ctx PLAYSTORE_ENABLED "$(_ctx_enabled "$dest.playstore")"
-    _ctx PLAYSTORE_TRACK "$(cfg "$dest.playstore.track" internal)"
-    _ctx PLAYSTORE_STATUS "$(cfg "$dest.playstore.status" completed)"
+    # tracks: [internal] | [production] | [internal, production]
+    local track testing="" production=false
     if [[ "$PLAYSTORE_ENABLED" == "true" ]]; then
-      _ctx PLAYSTORE_PRODUCTION "$(cfg "$dest.playstore.production" false)"
-    else
-      _ctx PLAYSTORE_PRODUCTION false
+      while IFS= read -r track; do
+        if [[ "$track" == "production" ]]; then production=true; else testing="$track"; fi
+      done < <(cfg_list "$dest.playstore.tracks")
     fi
+    _ctx PLAYSTORE_TESTING_TRACK "$testing"
+    _ctx PLAYSTORE_PRODUCTION "$production"
+    _ctx PLAYSTORE_STATUS "$(cfg "$dest.playstore.status" completed)"
     _ctx FIREBASE_ENABLED "$(_ctx_enabled "$dest.firebase")"
     _ctx FIREBASE_GROUPS "$(cfg "$dest.firebase.groups")"
     _ctx FIREBASE_TESTERS "$(cfg "$dest.firebase.testers")"

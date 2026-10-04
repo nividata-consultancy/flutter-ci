@@ -118,23 +118,39 @@ not checked. All destinations are skipped when the workflow runs with `dry-run: 
 
 | | UAT (`vX.Y.Z-beta.N`) | prod (`vX.Y.Z`) |
 |---|---|---|
-| `playstore` (internal testing) | ✓ | ✓ |
-| `playstore.production` (draft production release, needs `playstore.enabled: true`) | — | ✓ |
+| `playstore` → `internal` (or another testing track) | ✓ | ✓ |
+| `playstore` → `production` (always a **draft** release) | — | ✓ |
 | `firebase` (App Distribution) | ✓ | ✓ |
 | `drive` (Shared Drive folder) | ✓ | ✓ |
 
 ```yaml
 destinations:
-  playstore: { enabled: true,  track: internal, production: true }   # production: prod environment only
+  playstore: { enabled: true,  tracks: [internal, production] }      # production: prod environment only
   firebase:  { enabled: true,  groups: "qa-team", testers: "a@x.com" }
   drive:     { enabled: false, folder_id: "0AbC…" }                    # kept, but not used
 ```
 
 | Destination | Keys | Notes |
 |---|---|---|
-| `playstore` | `enabled` (**required**), `track` (default `internal`, or another testing track; not `production`), `status` (`completed` by default, or `draft` while the app is still a draft in Play Console), `production` (bool, prod only) | Uploads the AAB and `mapping.txt` to the testing track. Release name: `[UAT] 1.4.0-beta.1 (123)`. With `production: true`, the same build is also added to the **production track as a draft**. Nothing reaches users until someone presses **Release** in Play Console. No release notes are sent to Play. Internal testers are the email lists set on the internal testing track in Play Console. |
+| `playstore` | `enabled` (**required**), `tracks` (**required**), `status` (`completed` by default, or `draft` while the app is still a draft in Play Console; applies to the testing track) | Uploads the AAB and `mapping.txt`. Release name: `[UAT] 1.4.0-beta.1 (123)`. No release notes are sent to Play. Internal testers are the email lists set on the internal testing track in Play Console. See [Play tracks](#play-tracks). |
 | `firebase` | `enabled` (**required**), `groups`, `testers` (comma-separated, both optional) | Uploads the APK if one was built, otherwise the AAB (which requires the Firebase project to be linked to Play). **Release notes** are the tag message (see [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#release-notes)). `groups` are Firebase tester group aliases. |
 | `drive` | `enabled` (**required**), `folder_id` (**required** when enabled, a folder inside a **Shared Drive**) | Uploads the APK and AAB. |
+
+## Play tracks
+
+`playstore.tracks` decides where on Play the build goes:
+
+| `tracks` | Result | Allowed in |
+|---|---|---|
+| `[internal]` | Internal testing only (testers get it right away) | uat, prod |
+| `[production]` | Production only, as a **draft** release | prod |
+| `[internal, production]` | Internal testing **and** a draft production release of the same build | prod |
+
+- Instead of `internal` you can use another testing track (`alpha`, `beta` or a
+  custom closed track), but only one testing track per environment.
+- Production is **always a draft**. Nothing reaches users until someone opens Play
+  Console → Production, checks the draft and presses **Release**.
+- To change it for the next build, edit `tracks`, commit, then push the tag.
 
 ## Full example
 
@@ -159,7 +175,7 @@ environments:
       target: lib/main.dart
       artifacts: [aab, apk]
       destinations:
-        playstore: { enabled: true, track: internal }
+        playstore: { enabled: true, tracks: [internal] }
         firebase:  { enabled: true, groups: "qa-team" }
         drive:     { enabled: true, folder_id: "0AbCdEfGhIjK" }
     ios:
@@ -171,7 +187,7 @@ environments:
     android:
       artifacts: [aab, apk]
       destinations:
-        playstore: { enabled: true,  track: internal, production: true }
+        playstore: { enabled: true,  tracks: [internal, production] }
         firebase:  { enabled: true,  groups: "release-checkers" }
         drive:     { enabled: false, folder_id: "0AbCdEfGhIjK" }
     ios:

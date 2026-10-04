@@ -66,7 +66,7 @@ Store the keystore and passwords in your password manager too.
 3. **Play Console → Users and permissions → Invite new users**. Use the service
    account email and grant, for this app: *View app information*, *Release apps
    to testing tracks* and *Manage testing tracks and edit tester lists*. If an app
-   uses `production: true`, also grant *Release to production, exclude devices, and
+   lists `production` in `playstore.tracks`, also grant *Release to production, exclude devices, and
    use Play App Signing*. CI still only creates a **draft**, which a person releases.
 4. `gh secret set PLAY_SERVICE_ACCOUNT_JSON < play-sa.json`
 

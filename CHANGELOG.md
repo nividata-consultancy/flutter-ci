@@ -17,7 +17,8 @@ in [docs/MAINTAINING.md](docs/MAINTAINING.md#migrations).
 - Release notes from the annotated tag message (`git tag -a … -m …`), falling
   back to commit subjects; sent to Firebase App Distribution (and the GitHub Release).
 - Android destinations per app, each with a required `enabled: true|false` switch:
-  Play internal testing, optional draft production release (prod only),
+  Google Play `tracks` (`[internal]`, `[production]` as a draft, or both; production
+  only for prod),
   Firebase App Distribution with tester groups, Shared Drive.
 - iOS builds go to TestFlight only.
 - Reusable Android workflow `android-release.yml` with composite actions:

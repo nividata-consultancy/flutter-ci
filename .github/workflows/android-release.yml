@@ -248,7 +248,7 @@ jobs:
           service-account-json: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           package-name: ${{ steps.ctx.outputs.ANDROID_PACKAGE_NAME }}
           aab: ${{ steps.build.outputs.AAB_PATH }}
-          track: ${{ steps.ctx.outputs.PLAYSTORE_TRACK }}
+          testing-track: ${{ steps.ctx.outputs.PLAYSTORE_TESTING_TRACK }}
           status: ${{ steps.ctx.outputs.PLAYSTORE_STATUS }}
           release-name: "[${{ steps.ctx.outputs.ENV_LABEL }}] ${{ steps.ctx.outputs.VERSION_NAME_FULL }} (${{ steps.ctx.outputs.BUILD_NUMBER }})"
           version-code: ${{ steps.ctx.outputs.BUILD_NUMBER }}
@@ -308,7 +308,7 @@ jobs:
           context-json: ${{ toJSON(steps.ctx.outputs) }}
           slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           destinations: |
-            ${{ steps.play.outcome && format('Google Play ({0}{1})|{2}|', steps.ctx.outputs.PLAYSTORE_TRACK, steps.ctx.outputs.PLAYSTORE_PRODUCTION == 'true' && ' + production draft' || '', steps.play.outcome) || '' }}
+            ${{ steps.play.outcome && format('Google Play ({0}{1})|{2}|', steps.ctx.outputs.PLAYSTORE_TESTING_TRACK, steps.ctx.outputs.PLAYSTORE_PRODUCTION == 'true' && ' + production draft' || '', steps.play.outcome) || '' }}
             ${{ steps.firebase.outcome && format('Firebase App Distribution|{0}|{1}', steps.firebase.outcome, steps.firebase.outputs.link) || '' }}
             ${{ steps.drive.outcome && format('Google Drive|{0}|{1}', steps.drive.outcome, steps.drive.outputs.link) || '' }}
             ${{ steps.release.outcome && format('GitHub Release|{0}|{1}', steps.release.outcome, steps.release.outputs.url) || '' }}

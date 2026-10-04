@@ -60,7 +60,9 @@ Edit the copied file. The full schema is in [CONFIG_REFERENCE.md](CONFIG_REFEREN
 - `environments.uat` / `environments.prod`: dart define files, Android artifacts,
   and iOS display name and icon.
 - Android destinations: set `enabled: true` on each place builds should go
-  (Play internal testing, Firebase, Drive) and `enabled: false` on the others.
+  (Play, Firebase, Drive) and `enabled: false` on the others. For Play, `tracks`
+  picks internal testing, production (draft) or both
+  ([CONFIG_REFERENCE.md](CONFIG_REFERENCE.md#play-tracks)).
 - Dart defines: commit `env/uat.json` and `env/prod.json`, **or** keep them out of git and
   use the `DART_DEFINES_UAT_JSON` / `DART_DEFINES_PROD_JSON` secrets (step 4).
 
@@ -237,7 +239,7 @@ git push origin v0.1.0
 ```
 
 This produces a prod build on Play internal testing, plus a **draft** production
-release if `production: true` is set, and a prod build in TestFlight. Release
+release if `playstore.tracks` includes `production`, and a prod build in TestFlight. Release
 them manually as described in [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#promoting-to-production).
 
 ## Done checklist

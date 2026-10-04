@@ -99,11 +99,11 @@ set_yq() { yq -i e "$1" "$CFG"; }
   [[ "$output" == *"playstore needs 'aab'"* ]]
 }
 
-@test "production track is refused" {
-  set_yq '.environments.prod.android.destinations.playstore.track = "production"'
+@test "production track is prod-only" {
+  set_yq '.environments.uat.android.destinations.playstore.tracks = ["production"]'
   run "$SCRIPTS/read_config.sh" validate "$CFG"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"must be a testing track"* ]]
+  [[ "$output" == *"'production' is only allowed in the prod environment"* ]]
 }
 
 @test "playstore requires package name" {
@@ -125,13 +125,6 @@ set_yq() { yq -i e "$1" "$CFG"; }
   run "$SCRIPTS/read_config.sh" validate "$CFG"
   [ "$status" -eq 1 ]
   [[ "$output" == *"iOS builds go to TestFlight only"* ]]
-}
-
-@test "play production draft is prod-only" {
-  set_yq '.environments.uat.android.destinations.playstore.production = true'
-  run "$SCRIPTS/read_config.sh" validate "$CFG"
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"production is only allowed in the prod environment"* ]]
 }
 
 @test "invalid ios build setting name" {
@@ -166,7 +159,8 @@ set_yq() { yq -i e "$1" "$CFG"; }
   [[ "$output" == *"ANDROID_ARTIFACTS=aab\ apk"* ]]
   [[ "$output" == *"BUILD_NUMBER_OFFSET=100"* ]]
   [[ "$output" == *"PLAYSTORE_ENABLED=true"* ]]
-  [[ "$output" == *"PLAYSTORE_TRACK=internal"* ]]
+  [[ "$output" == *"PLAYSTORE_TESTING_TRACK=internal"* ]]
+  [[ "$output" == *"PLAYSTORE_PRODUCTION=false"* ]]
   [[ "$output" == *"DRIVE_FOLDER_ID=0AbCdEfGhIjKlMnOp"* ]]
   [[ "$output" == *"PROD_BRANCHES=main"* ]]
 }

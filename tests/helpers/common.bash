@@ -35,7 +35,7 @@ environments:
       target: lib/main.dart
       artifacts: [aab, apk]
       destinations:
-        playstore: { enabled: true, track: internal }
+        playstore: { enabled: true, tracks: [internal] }
         firebase: { enabled: true, groups: "qa-team" }
         drive: { enabled: true, folder_id: "0AbCdEfGhIjKlMnOp" }
     ios:
@@ -49,7 +49,7 @@ environments:
     android:
       artifacts: [aab]
       destinations:
-        playstore: { enabled: true, track: internal, production: true }
+        playstore: { enabled: true, tracks: [internal, production] }
         firebase: { enabled: false, groups: "qa-team" }
         drive: { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }
     ios:

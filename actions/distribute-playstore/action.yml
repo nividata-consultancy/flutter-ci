@@ -1,8 +1,9 @@
 name: flutter-ci / distribute-playstore
 description: >
-  Upload an AAB to a Google Play testing track (e.g. internal testing) and,
-  optionally, add the same build to the production track as a DRAFT release.
-  The app's very first upload must be done manually in Play Console.
+  Upload an AAB to Google Play: a testing track (e.g. internal), the
+  production track as a DRAFT release, or both. Production is always a draft,
+  released by a person in Play Console. The app's very first upload must be
+  done manually in Play Console.
 inputs:
   service-account-json:
     description: PLAY_SERVICE_ACCOUNT_JSON (plain JSON)
@@ -13,21 +14,21 @@ inputs:
   aab:
     description: Path to the .aab
     required: true
-  track:
-    description: Testing track (internal, alpha, beta or a custom closed track)
-    default: internal
+  testing-track:
+    description: Testing track to upload to (e.g. internal); empty for none
+    default: ""
   status:
-    description: completed | draft (draft is required while the app itself is still a draft in Play Console)
+    description: Status on the testing track, completed | draft (draft while the app itself is still a draft in Play Console)
     default: completed
+  production:
+    description: '"true" to create a draft release on the production track'
+    default: "false"
   release-name:
     description: Release name shown in Play Console
     required: true
   version-code:
-    description: versionCode of the AAB (used for the production draft)
+    description: versionCode of the AAB
     required: true
-  production:
-    description: '"true" to also create a draft release on the production track'
-    default: "false"
   mapping-file:
     description: R8 mapping.txt to upload for deobfuscation
     default: ""
@@ -41,26 +42,30 @@ runs:
       shell: bash
       env:
         SA: ${{ inputs.service-account-json }}
-        TRACK: ${{ inputs.track }}
+        TESTING: ${{ inputs.testing-track }}
+        PRODUCTION: ${{ inputs.production }}
         LOG_SH: ${{ github.action_path }}/../../scripts/common/log.sh
       run: |
         source "$LOG_SH"
         [[ -n "$SA" ]] || die "PLAY_SERVICE_ACCOUNT_JSON is not set." "SECRETS.md#google-play"
-        [[ "$TRACK" != "production" ]] || die "Use 'production: true' (draft) instead of track: production." "CONFIG_REFERENCE.md#destinations"
+        [[ -n "$TESTING" || "$PRODUCTION" == "true" ]] || die "No Play track selected (playstore.tracks)." "CONFIG_REFERENCE.md#destinations"
 
-    - name: Upload to Google Play (${{ inputs.track }})
+    # Testing track (e.g. internal), with or without production.
+    - name: Upload to Google Play (${{ inputs.testing-track }})
+      if: inputs.testing-track != ''
       uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
       with:
         serviceAccountJsonPlainText: ${{ inputs.service-account-json }}
         packageName: ${{ inputs.package-name }}
         releaseFiles: ${{ inputs.working-directory }}/${{ inputs.aab }}
         releaseName: ${{ inputs.release-name }}
-        tracks: ${{ inputs.track }}
+        tracks: ${{ inputs.testing-track }}
         status: ${{ inputs.status }}
         mappingFile: ${{ inputs.mapping-file != '' && format('{0}/{1}', inputs.working-directory, inputs.mapping-file) || '' }}
 
-    - name: Draft release on production
-      if: inputs.production == 'true'
+    # Production + testing track: the AAB is already uploaded, add it as a draft.
+    - name: Draft release on production (same build)
+      if: inputs.production == 'true' && inputs.testing-track != ''
       shell: bash
       env:
         PLAY_SERVICE_ACCOUNT_JSON: ${{ inputs.service-account-json }}
@@ -68,3 +73,16 @@ runs:
         VERSION_CODE: ${{ inputs.version-code }}
         RELEASE_NAME: ${{ inputs.release-name }}
       run: '"$GITHUB_ACTION_PATH/../../scripts/android/play_production_draft.sh"'
+
+    # Production only: upload the AAB straight to production as a draft.
+    - name: Upload to Google Play (production, draft)
+      if: inputs.production == 'true' && inputs.testing-track == ''
+      uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+      with:
+        serviceAccountJsonPlainText: ${{ inputs.service-account-json }}
+        packageName: ${{ inputs.package-name }}
+        releaseFiles: ${{ inputs.working-directory }}/${{ inputs.aab }}
+        releaseName: ${{ inputs.release-name }}
+        tracks: production
+        status: draft
+        mappingFile: ${{ inputs.mapping-file != '' && format('{0}/{1}', inputs.working-directory, inputs.mapping-file) || '' }}

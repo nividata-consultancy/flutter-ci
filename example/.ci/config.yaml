@@ -16,7 +16,7 @@ environments:
     android:
       artifacts: [aab, apk]
       destinations:
-        playstore: { enabled: true, track: internal }
+        playstore: { enabled: true, tracks: [internal] }
     ios:
       display_name: "Example UAT"
       app_icon: AppIcon-UAT
@@ -25,7 +25,7 @@ environments:
     android:
       artifacts: [aab]
       destinations:
-        playstore: { enabled: true, track: internal }
+        playstore: { enabled: true, tracks: [internal] }
     ios:
       display_name: "Example"
       app_icon: AppIcon
