@@ -6,8 +6,8 @@ A guide for app developers. Builds start **only** when you push a tag.
 
 | Tag | Environment | Example | Goes to |
 |---|---|---|---|
-| `vX.Y.Z-beta.N` | **UAT** | `v1.4.0-beta.1` | Android: Play internal testing, Firebase, Drive (as configured). iOS: TestFlight |
-| `vX.Y.Z` | **prod** | `v1.4.0` | Android: Play internal testing + draft production release, Firebase, Drive (as configured). iOS: TestFlight |
+| `vX.Y.Z-beta.N` | **UAT** | `v1.4.0-beta.1` | Android: the destinations with `enabled: true` in `environments.uat` (Play internal testing, Firebase, Drive). iOS: TestFlight |
+| `vX.Y.Z` | **prod** | `v1.4.0` | Android: the destinations with `enabled: true` in `environments.prod` (Play internal testing + optional draft production release, Firebase, Drive). iOS: TestFlight |
 | anything else starting with `v` | build fails | `v1.4`, `v1.4.0-rc1` | nothing |
 
 - UAT and prod tags can be on **any branch**.
@@ -57,6 +57,12 @@ A plain tag without a message (`git tag v1.4.0-beta.1`) works too. The notes are
 the latest commit subjects since the previous tag. Firebase sends them to the
 `groups` set in config. The GitHub Release on the app repo (for developers) shows
 the tag message plus the commit list.
+
+## Choosing where a build goes
+
+Android destinations are switched on and off in `.ci/config.yaml` with
+`enabled: true|false` (see [CONFIG_REFERENCE.md](CONFIG_REFERENCE.md#destinations)).
+To send the next build somewhere else, change the switches, commit, then tag that commit.
 
 ## Cutting a UAT build
 

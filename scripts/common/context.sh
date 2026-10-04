@@ -28,24 +28,9 @@ _ctx() {
   _CTX_KEYS+=("$key")
 }
 
-_ctx_destinations() {
-  local base="$1"
-  if cfg_has "$base.firebase"; then
-    _ctx FIREBASE_ENABLED true
-    _ctx FIREBASE_GROUPS "$(cfg "$base.firebase.groups")"
-    _ctx FIREBASE_TESTERS "$(cfg "$base.firebase.testers")"
-  else
-    _ctx FIREBASE_ENABLED false
-    _ctx FIREBASE_GROUPS ""
-    _ctx FIREBASE_TESTERS ""
-  fi
-  if cfg_has "$base.drive"; then
-    _ctx DRIVE_ENABLED true
-    _ctx DRIVE_FOLDER_ID "$(cfg "$base.drive.folder_id")"
-  else
-    _ctx DRIVE_ENABLED false
-    _ctx DRIVE_FOLDER_ID ""
-  fi
+# _ctx_enabled <destination-path> — "true" only when enabled: true.
+_ctx_enabled() {
+  if [[ "$(cfg "$1.enabled" false)" == "true" ]]; then printf true; else printf false; fi
 }
 
 # resolve_context <app-root> <config-path> <tag> <android|ios>
@@ -95,15 +80,20 @@ resolve_context() {
     local artifacts
     artifacts="$(cfg_list "$a.artifacts" | tr '\n' ' ' | sed 's/ *$//')"
     _ctx ANDROID_ARTIFACTS "${artifacts:-aab}"
-    if cfg_has "$a.destinations.playstore"; then
-      _ctx PLAYSTORE_ENABLED true
+    local dest="$a.destinations"
+    _ctx PLAYSTORE_ENABLED "$(_ctx_enabled "$dest.playstore")"
+    _ctx PLAYSTORE_TRACK "$(cfg "$dest.playstore.track" internal)"
+    _ctx PLAYSTORE_STATUS "$(cfg "$dest.playstore.status" completed)"
+    if [[ "$PLAYSTORE_ENABLED" == "true" ]]; then
+      _ctx PLAYSTORE_PRODUCTION "$(cfg "$dest.playstore.production" false)"
     else
-      _ctx PLAYSTORE_ENABLED false
+      _ctx PLAYSTORE_PRODUCTION false
     fi
-    _ctx PLAYSTORE_TRACK "$(cfg "$a.destinations.playstore.track" internal)"
-    _ctx PLAYSTORE_STATUS "$(cfg "$a.destinations.playstore.status" completed)"
-    _ctx PLAYSTORE_PRODUCTION "$(cfg "$a.destinations.playstore.production" false)"
-    _ctx_destinations "$a.destinations"
+    _ctx FIREBASE_ENABLED "$(_ctx_enabled "$dest.firebase")"
+    _ctx FIREBASE_GROUPS "$(cfg "$dest.firebase.groups")"
+    _ctx FIREBASE_TESTERS "$(cfg "$dest.firebase.testers")"
+    _ctx DRIVE_ENABLED "$(_ctx_enabled "$dest.drive")"
+    _ctx DRIVE_FOLDER_ID "$(cfg "$dest.drive.folder_id")"
     _ctx GITHUB_RELEASE "$(cfg '.app.github_release.enabled' true)"
     _ctx GITHUB_RELEASE_ATTACH "$(cfg '.app.github_release.attach_artifacts' false)"
   else

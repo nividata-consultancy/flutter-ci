@@ -57,8 +57,10 @@ Edit the copied file. The full schema is in [CONFIG_REFERENCE.md](CONFIG_REFEREN
 - `app.build_number_offset`: Android `versionCode` = GitHub run number + offset.
   If the app is already on Play, set the offset above the highest versionCode
   already uploaded, e.g. `1000`.
-- `environments.uat` / `environments.prod`: dart define files, Android artifacts and
-  destinations, and iOS display name and icon.
+- `environments.uat` / `environments.prod`: dart define files, Android artifacts,
+  and iOS display name and icon.
+- Android destinations: set `enabled: true` on each place builds should go
+  (Play internal testing, Firebase, Drive) and `enabled: false` on the others.
 - Dart defines: commit `env/uat.json` and `env/prod.json`, **or** keep them out of git and
   use the `DART_DEFINES_UAT_JSON` / `DART_DEFINES_PROD_JSON` secrets (step 4).
 

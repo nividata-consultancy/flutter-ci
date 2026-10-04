@@ -110,28 +110,31 @@ The iOS version is always `X.Y.Z` and the build number is `CI_BUILD_NUMBER`.
 
 ## Destinations
 
-Android only. Each app picks any mix. All destinations are skipped when the
-workflow runs with `dry-run: true`.
+Android only. Each destination has a **required on/off switch**, `enabled: true|false`.
+A build is sent **only** to the destinations with `enabled: true`. To change where
+builds go, flip the switches, commit, then push the tag. Destinations with
+`enabled: false` keep their settings (e.g. a placeholder `folder_id`), which are
+not checked. All destinations are skipped when the workflow runs with `dry-run: true`.
 
 | | UAT (`vX.Y.Z-beta.N`) | prod (`vX.Y.Z`) |
 |---|---|---|
 | `playstore` (internal testing) | ✓ | ✓ |
-| `playstore.production` (draft production release) | — | ✓ |
+| `playstore.production` (draft production release, needs `playstore.enabled: true`) | — | ✓ |
 | `firebase` (App Distribution) | ✓ | ✓ |
 | `drive` (Shared Drive folder) | ✓ | ✓ |
 
 ```yaml
 destinations:
-  playstore: { track: internal, production: true }   # production: prod environment only
-  firebase:  { groups: "qa-team", testers: "a@x.com" }
-  drive:     { folder_id: "0AbC…" }
+  playstore: { enabled: true,  track: internal, production: true }   # production: prod environment only
+  firebase:  { enabled: true,  groups: "qa-team", testers: "a@x.com" }
+  drive:     { enabled: false, folder_id: "0AbC…" }                    # kept, but not used
 ```
 
 | Destination | Keys | Notes |
 |---|---|---|
-| `playstore` | `track` (default `internal`, or another testing track; not `production`), `status` (`completed` by default, or `draft` while the app is still a draft in Play Console), `production` (bool, prod only) | Uploads the AAB and `mapping.txt` to the testing track. Release name: `[UAT] 1.4.0-beta.1 (123)`. With `production: true`, the same build is also added to the **production track as a draft**. Nothing reaches users until someone presses **Release** in Play Console. No release notes are sent to Play. Internal testers are the email lists set on the internal testing track in Play Console. |
-| `firebase` | `groups`, `testers` (comma-separated, both optional) | Uploads the APK if one was built, otherwise the AAB (which requires the Firebase project to be linked to Play). **Release notes** are the tag message (see [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#release-notes)). `groups` are Firebase tester group aliases. |
-| `drive` | `folder_id` (**required**, a folder inside a **Shared Drive**) | Uploads the APK and AAB. |
+| `playstore` | `enabled` (**required**), `track` (default `internal`, or another testing track; not `production`), `status` (`completed` by default, or `draft` while the app is still a draft in Play Console), `production` (bool, prod only) | Uploads the AAB and `mapping.txt` to the testing track. Release name: `[UAT] 1.4.0-beta.1 (123)`. With `production: true`, the same build is also added to the **production track as a draft**. Nothing reaches users until someone presses **Release** in Play Console. No release notes are sent to Play. Internal testers are the email lists set on the internal testing track in Play Console. |
+| `firebase` | `enabled` (**required**), `groups`, `testers` (comma-separated, both optional) | Uploads the APK if one was built, otherwise the AAB (which requires the Firebase project to be linked to Play). **Release notes** are the tag message (see [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#release-notes)). `groups` are Firebase tester group aliases. |
+| `drive` | `enabled` (**required**), `folder_id` (**required** when enabled, a folder inside a **Shared Drive**) | Uploads the APK and AAB. |
 
 ## Full example
 
@@ -156,9 +159,9 @@ environments:
       target: lib/main.dart
       artifacts: [aab, apk]
       destinations:
-        playstore: { track: internal }
-        firebase:  { groups: "qa-team" }
-        drive:     { folder_id: "0AbCdEfGhIjK" }
+        playstore: { enabled: true, track: internal }
+        firebase:  { enabled: true, groups: "qa-team" }
+        drive:     { enabled: true, folder_id: "0AbCdEfGhIjK" }
     ios:
       display_name: "MyApp UAT"
       app_icon: AppIcon-UAT
@@ -168,9 +171,9 @@ environments:
     android:
       artifacts: [aab, apk]
       destinations:
-        playstore: { track: internal, production: true }
-        firebase:  { groups: "release-checkers" }
-        drive:     { folder_id: "0AbCdEfGhIjK" }
+        playstore: { enabled: true,  track: internal, production: true }
+        firebase:  { enabled: true,  groups: "release-checkers" }
+        drive:     { enabled: false, folder_id: "0AbCdEfGhIjK" }
     ios:
       display_name: "MyApp"
       app_icon: AppIcon

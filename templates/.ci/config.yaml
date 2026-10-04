@@ -20,10 +20,10 @@ environments:
       # flavor: uat                   # only if android/app/build.gradle defines productFlavors
       # target: lib/main.dart
       artifacts: [aab, apk]           # aab | apk
-      destinations:                   # remove the lines you don't need
-        playstore: { track: internal }          # Play internal testing
-        # firebase:  { groups: "qa-team" }      # Firebase App Distribution (+ tag message as release notes)
-        # drive:     { folder_id: "SHARED_DRIVE_FOLDER_ID" }
+      destinations:                   # builds go only where enabled: true
+        playstore: { enabled: true,  track: internal }                   # Play internal testing
+        firebase:  { enabled: false, groups: "qa-team" }                 # Firebase App Distribution (tag message = release notes)
+        drive:     { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }  # Google Shared Drive folder
     ios:                              # iOS always goes to TestFlight (Xcode Cloud), nowhere else
       display_name: "MyApp UAT"
       app_icon: AppIcon-UAT
@@ -35,9 +35,9 @@ environments:
     android:
       artifacts: [aab]
       destinations:
-        playstore: { track: internal, production: true }   # internal testing + DRAFT production release
-        # firebase:  { groups: "qa-team" }
-        # drive:     { folder_id: "SHARED_DRIVE_FOLDER_ID" }
+        playstore: { enabled: true,  track: internal, production: true }  # internal testing + DRAFT production release
+        firebase:  { enabled: false, groups: "qa-team" }
+        drive:     { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }
     ios:
       display_name: "MyApp"
       app_icon: AppIcon

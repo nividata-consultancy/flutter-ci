@@ -131,14 +131,6 @@ _cfg_validate_folder_id() {
   fi
 }
 
-_cfg_validate_firebase() {
-  local p="$1" label="$2"
-  _cfg_expect_type "$p" "$label" '!!map' || return
-  _cfg_known_keys "$p" "$label" groups testers
-  _cfg_expect_type "$p.groups" "$label.groups" '!!str' || true
-  _cfg_expect_type "$p.testers" "$label.testers" '!!str' || true
-}
-
 _cfg_validate_android() {
   local env="$1" p=".environments.$1.android" label="environments.$1.android"
   _cfg_expect_type "$p" "$label" '!!map' || return 0
@@ -171,9 +163,11 @@ _cfg_validate_android() {
   _cfg_expect_type "$d" "$dl" '!!map' || return 0
   _cfg_known_keys "$d" "$dl" playstore firebase drive
 
-  if cfg_has "$d.playstore"; then
-    if _cfg_expect_type "$d.playstore" "$dl.playstore" '!!map'; then
-      _cfg_known_keys "$d.playstore" "$dl.playstore" track status production
+  # Every destination needs an explicit `enabled: true|false`. Disabled
+  # destinations keep their settings but are neither checked nor used.
+  if cfg_has "$d.playstore" && _cfg_expect_type "$d.playstore" "$dl.playstore" '!!map'; then
+    _cfg_known_keys "$d.playstore" "$dl.playstore" enabled track status production
+    if _cfg_dest_enabled "$d.playstore" "$dl.playstore"; then
       if _cfg_expect_type "$d.playstore.track" "$dl.playstore.track" '!!str'; then
         local track
         track="$(cfg "$d.playstore.track")"
@@ -194,23 +188,37 @@ _cfg_validate_android() {
           _cfg_err "$dl.playstore.production is only allowed in the prod environment"
         fi
       fi
-    fi
-    [[ $has_aab -eq 1 ]] || _cfg_err "$dl.playstore needs 'aab' in $label.artifacts (Play only accepts app bundles)"
-    cfg_has '.app.android_package_name' \
-      || _cfg_err "app.android_package_name is required when a playstore destination is configured"
-  fi
-  if cfg_has "$d.firebase"; then
-    _cfg_validate_firebase "$d.firebase" "$dl.firebase"
-    if [[ $has_apk -eq 0 ]]; then
-      _CFG_WARNINGS+=("$dl.firebase: no 'apk' in artifacts, so the AAB will be uploaded; that only works if the Firebase project is linked to Google Play")
+      [[ $has_aab -eq 1 ]] || _cfg_err "$dl.playstore needs 'aab' in $label.artifacts (Play only accepts app bundles)"
+      cfg_has '.app.android_package_name' \
+        || _cfg_err "app.android_package_name is required when the playstore destination is enabled"
     fi
   fi
-  if cfg_has "$d.drive"; then
-    if _cfg_expect_type "$d.drive" "$dl.drive" '!!map'; then
-      _cfg_known_keys "$d.drive" "$dl.drive" folder_id
+  if cfg_has "$d.firebase" && _cfg_expect_type "$d.firebase" "$dl.firebase" '!!map'; then
+    _cfg_known_keys "$d.firebase" "$dl.firebase" enabled groups testers
+    if _cfg_dest_enabled "$d.firebase" "$dl.firebase"; then
+      _cfg_expect_type "$d.firebase.groups" "$dl.firebase.groups" '!!str' || true
+      _cfg_expect_type "$d.firebase.testers" "$dl.firebase.testers" '!!str' || true
+      if [[ $has_apk -eq 0 ]]; then
+        _CFG_WARNINGS+=("$dl.firebase: no 'apk' in artifacts, so the AAB will be uploaded; that only works if the Firebase project is linked to Google Play")
+      fi
+    fi
+  fi
+  if cfg_has "$d.drive" && _cfg_expect_type "$d.drive" "$dl.drive" '!!map'; then
+    _cfg_known_keys "$d.drive" "$dl.drive" enabled folder_id
+    if _cfg_dest_enabled "$d.drive" "$dl.drive"; then
       _cfg_validate_folder_id "$d.drive.folder_id" "$dl.drive.folder_id"
     fi
   fi
+}
+
+# _cfg_dest_enabled <path> <label> — require `enabled: true|false`; 0 if true.
+_cfg_dest_enabled() {
+  if ! cfg_has "$1.enabled"; then
+    _cfg_err "$2.enabled is required (true to send builds there, false to skip)"
+    return 1
+  fi
+  _cfg_expect_type "$1.enabled" "$2.enabled" '!!bool' || return 1
+  [[ "$(cfg "$1.enabled")" == "true" ]]
 }
 
 _cfg_validate_ios() {
