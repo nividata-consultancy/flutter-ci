@@ -1,0 +1,34 @@
+# Release builds via flutter-ci (https://github.com/OWNER/flutter-ci).
+#   git tag v1.4.0-beta.1 && git push origin v1.4.0-beta.1   -> UAT
+#   git tag v1.4.0        && git push origin v1.4.0          -> prod (commit must be on main)
+#
+# Secrets are passed one by one on purpose: `secrets: inherit` does not work
+# across organizations. Delete lines for destinations you do not use.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # GitHub Release on this repo
+
+jobs:
+  android:
+    uses: OWNER/flutter-ci/.github/workflows/android-release.yml@v1
+    with:
+      ci-lib-ref: v1 # keep equal to the @ref above
+      # config-path: .ci/config.yaml
+      # dry-run: false
+    secrets:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+      GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+      DART_DEFINES_UAT_JSON: ${{ secrets.DART_DEFINES_UAT_JSON }}
+      DART_DEFINES_PROD_JSON: ${{ secrets.DART_DEFINES_PROD_JSON }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

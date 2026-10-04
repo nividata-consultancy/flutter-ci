@@ -1,0 +1,5 @@
+# flutter-ci (append to your app's .gitignore)
+/.flutter-ci/
+/ios/Flutter/Environment.xcconfig
+/ios/TestFlight/
+android/key.properties

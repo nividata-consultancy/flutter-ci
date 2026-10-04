@@ -1,0 +1,25 @@
+// Example of the file flutter-ci generates on Xcode Cloud as
+// ios/Flutter/Environment.xcconfig (do not commit the real one).
+// Values come from environments.<env>.ios in .ci/config.yaml.
+APP_DISPLAY_NAME = MyApp UAT
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon-UAT
+// One line per environments.<env>.ios.build_settings entry:
+// SOME_SETTING = value
+
+// ---------------------------------------------------------------------------
+// One-time setup in your app (see docs/NEW_PROJECT_SETUP.md):
+//
+// ios/Flutter/Release.xcconfig
+//   #include "Generated.xcconfig"
+//   APP_DISPLAY_NAME = MyApp
+//   ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+//   #include? "Environment.xcconfig"
+//
+// ios/Flutter/Debug.xcconfig
+//   #include "Generated.xcconfig"
+//   APP_DISPLAY_NAME = MyApp Dev
+//   ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+//
+// ios/Runner/Info.plist
+//   <key>CFBundleDisplayName</key>
+//   <string>$(APP_DISPLAY_NAME)</string>

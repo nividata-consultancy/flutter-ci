@@ -1,0 +1,81 @@
+# CI for flutter-ci itself: lint, unit tests (Linux + macOS bash 3.2) and a
+# dry-run Android build of example/ through the reusable workflow at this ref.
+name: self-test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: self-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: shellcheck
+        run: |
+          shellcheck --version
+          git ls-files '*.sh' | xargs shellcheck -x
+      - name: actionlint
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/914e7df21a07ef503a81201c76d2b11c789d3fca/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color
+      - name: Scripts and bootstraps are executable
+        run: |
+          bad="$(git ls-files -s -- '*.sh' | awk '$1 != "100755" {print $4}')"
+          if [[ -n "$bad" ]]; then
+            echo "::error::Not executable in git (run git update-index --chmod=+x): $bad"
+            exit 1
+          fi
+      - name: Secret scan
+        run: |
+          # This repo is public: block obvious secrets / internal hosts.
+          if git grep -nIE '(BEGIN (RSA |EC )?PRIVATE KEY|hooks\.slack\.com/services/T|AIza[0-9A-Za-z_-]{35})' -- . ':!tests/'; then
+            echo "::error::Possible secret committed"
+            exit 1
+          fi
+
+  bats:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest] # macOS covers /bin/bash 3.2 (Xcode Cloud)
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install bats and yq
+        run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install bats-core yq
+          else
+            sudo apt-get update -q && sudo apt-get install -y -q bats
+          fi
+          yq --version
+          bats --version
+      - name: bats
+        run: bats --print-output-on-failure tests/
+
+  android-dry-run:
+    needs: [lint, bats]
+    permissions:
+      contents: write # the reusable job declares it; nothing is written in dry-run
+    uses: ./.github/workflows/android-release.yml
+    with:
+      ci-lib-repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+      ci-lib-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      app-directory: example
+      dry-run: true
+      tag: v0.0.1-beta.1

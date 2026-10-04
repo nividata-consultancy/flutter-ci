@@ -1,0 +1,45 @@
+# flutter-ci project config — schema: https://github.com/OWNER/flutter-ci/blob/v1/docs/CONFIG_REFERENCE.md
+version: 1
+
+app:
+  name: MyApp                         # used in artifact names and notifications
+  flutter_version_file: .fvmrc        # .fvmrc ({"flutter": "X.Y.Z"}) or pubspec.yaml (environment.flutter)
+  java_version: "17"
+  prod_branches: [main]               # prod tags must be on one of these
+  build_number_offset: 0              # Android versionCode = run number + offset
+  run_tests: true
+  run_analyze: false
+  obfuscate: false                    # --obfuscate --split-debug-info
+  android_package_name: com.example.myapp   # needed for the playstore destination
+  # github_release: { enabled: true, attach_artifacts: false }
+
+environments:
+  uat:
+    dart_define_file: env/uat.json    # optional; or the DART_DEFINES_UAT_JSON secret
+    android:
+      # flavor: uat                   # only if android/app/build.gradle defines productFlavors
+      # target: lib/main.dart
+      artifacts: [aab, apk]           # aab | apk
+      destinations:
+        playstore: { track: internal }
+        # firebase:  { groups: "qa-team" }
+        # drive:     { folder_id: "SHARED_DRIVE_FOLDER_ID" }
+    ios:
+      display_name: "MyApp UAT"
+      app_icon: AppIcon-UAT
+      # google_service_info: ios/config/uat/GoogleService-Info.plist
+      # build_settings: { SOME_SETTING: value }
+      # destinations:                 # TestFlight is set up in Xcode Cloud, not here
+      #   firebase: { groups: "qa-team" }
+      #   drive:    { folder_id: "SHARED_DRIVE_FOLDER_ID" }
+
+  prod:
+    dart_define_file: env/prod.json
+    android:
+      artifacts: [aab]
+      destinations:
+        playstore: { track: internal }
+    ios:
+      display_name: "MyApp"
+      app_icon: AppIcon
+      # google_service_info: ios/config/prod/GoogleService-Info.plist
