@@ -17,6 +17,8 @@ set -euo pipefail
 _DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/common/google_auth.sh
 source "$_DIR/../common/google_auth.sh"
+# shellcheck source=scripts/common/read_config.sh
+source "$_DIR/../common/read_config.sh"   # ensure_yq
 
 name="${1:-}"
 parent="${2:-}"
