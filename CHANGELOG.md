@@ -13,6 +13,12 @@ in [docs/MAINTAINING.md](docs/MAINTAINING.md#migrations).
   `environments.<env>.ios.enabled` (default `true`). Android skips the job (green);
   iOS stops in `ci_post_clone.sh` before building (shown as failed, nothing sent to TestFlight).
 
+### Fixed
+- Drive uploads: errors show the failing phase and curl's own message (no more
+  "HTTP 000 … see log"), network errors are retried, and a missing upload
+  address is caught. New troubleshooting section "Drive upload fails".
+- A self-test assertion that was outdated in v1.1.0.
+
 ## [1.1.0] - 2026-10-04
 
 ### Added
