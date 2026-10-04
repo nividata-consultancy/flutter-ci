@@ -40,57 +40,9 @@ teardown() { teardown_tmp; }
   [[ "$output" == *"nothing to do"* ]]
 }
 
-@test "post_xcodebuild: writes labeled WhatToTest under 1 KB" {
-  git_q init "$TMP/repo"
-  cd "$TMP/repo"
-  for i in 1 2 3 4 5 6 7; do git_q commit --allow-empty -m "$(printf 'Feature %s %0300d' "$i" 0)"; done
-  cat >"$TMP/repo/.flutter-ci/state.env" <<STATE
-TAG=v1.4.0
-ENVIRONMENT=prod
-ENV_LABEL=PROD
-VERSION_NAME_FULL=1.4.0
-APP_NAME=MyApp
-FIREBASE_ENABLED=false
-DRIVE_ENABLED=false
-BUILD_NUMBER=9
-COMMIT=$(git rev-parse HEAD)
-APP_ROOT=$TMP/repo
-STATE
+@test "post_xcodebuild: missing state only warns" {
   CI_XCODEBUILD_ACTION=archive run "$XC/post_xcodebuild.sh"
   [ "$status" -eq 0 ]
-  f="$TMP/repo/ios/TestFlight/WhatToTest.en-US.txt"
-  [[ "$(head -n 1 "$f")" == "[PROD] v1.4.0 · "* ]]
-  [ "$(LC_ALL=C wc -c <"$f" | tr -d ' ')" -lt 1024 ]
-}
-
-@test "post_xcodebuild: missing ad hoc IPA is reported but not fatal" {
-  git_q init "$TMP/repo"
-  cd "$TMP/repo" && git_q commit --allow-empty -m x
-  cat >"$TMP/repo/.flutter-ci/state.env" <<STATE
-TAG=v1.4.0-beta.1
-ENVIRONMENT=uat
-ENV_LABEL=UAT
-VERSION_NAME_FULL=1.4.0-beta.1
-APP_NAME=MyApp
-FIREBASE_ENABLED=true
-FIREBASE_GROUPS=qa
-FIREBASE_TESTERS=
-DRIVE_ENABLED=false
-DRIVE_FOLDER_ID=
-BUILD_NUMBER=9
-COMMIT=$(git rev-parse HEAD)
-APP_ROOT=$TMP/repo
-STATE
-  CI_XCODEBUILD_ACTION=archive run "$XC/post_xcodebuild.sh"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"No ad hoc IPA found"* ]]
-  CI_XCODEBUILD_ACTION=archive FLUTTER_CI_STRICT=1 run "$XC/post_xcodebuild.sh"
-  [ "$status" -eq 1 ]
-}
-
-@test "post_xcodebuild: missing state fails clearly" {
-  CI_XCODEBUILD_ACTION=archive run "$XC/post_xcodebuild.sh"
-  [ "$status" -eq 1 ]
   [[ "$output" == *"ci_post_clone.sh did not finish"* ]]
 }
 

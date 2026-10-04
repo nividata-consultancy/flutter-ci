@@ -53,7 +53,7 @@ firebase_distribute() {
   done
 
   [[ -f "$file" ]] || { log_error "Firebase: file to upload not found: $file"; return 1; }
-  [[ -n "$app" ]] || { log_error "Firebase: the Firebase app ID is not set (FIREBASE_ANDROID_APP_ID / FIREBASE_IOS_APP_ID)." "SECRETS.md#firebase-app-distribution"; return 1; }
+  [[ -n "$app" ]] || { log_error "Firebase: the Firebase app ID is not set (FIREBASE_ANDROID_APP_ID secret)." "SECRETS.md#firebase-app-distribution"; return 1; }
 
   local creds_json
   creds_json="$(secret_from_env FIREBASE_SERVICE_ACCOUNT_JSON)"

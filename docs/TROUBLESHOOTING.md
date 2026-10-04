@@ -104,6 +104,16 @@ track), uploads fail with `Only releases with status draft may be created on dra
 Set `playstore: { track: internal, status: draft }` until the first release is out,
 then remove `status`.
 
+## Play production draft fails
+
+`Play production draft: … (HTTP 403)`: the Play service account needs the
+*Release to production…* permission for this app (see [SECRETS.md](SECRETS.md#google-play)).
+
+`… (HTTP 400/409)`: the production track already has a draft or an in-review
+release that conflicts. Open Play Console → Production, finish or discard it, then
+push a new tag. While the app is still a **draft app**, production releases are not
+possible yet. Remove `production: true` until the first release is published.
+
 ## Firebase upload fails
 
 - `403` / `PERMISSION_DENIED`: the service account needs the **Firebase App
@@ -112,8 +122,6 @@ then remove `status`.
 - `Invalid group alias`: use the group's alias, not its display name.
 - AAB uploads need the Firebase project linked to Google Play. Build an `apk` as
   well (`artifacts: [aab, apk]`) to avoid this.
-- iOS: `No ad hoc IPA found`. See [XCODE_CLOUD_SETUP.md](XCODE_CLOUD_SETUP.md#ad-hoc-ipa-for-firebase-and-drive).
-  Testers' devices must be registered in the Apple Developer account.
 
 ## Android build fails
 

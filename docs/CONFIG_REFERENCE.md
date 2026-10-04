@@ -102,26 +102,36 @@ On Android, `versionName` is the full tag version (`1.4.0-beta.1`).
 | `google_service_info` | path (`.plist`) | none | Copied to `ios/Runner/GoogleService-Info.plist`. |
 | `build_settings` | map `KEY: value` | none | Extra lines in `Environment.xcconfig` (UPPER_SNAKE_CASE keys). |
 | `target` | path | `lib/main.dart` | `--target` for `flutter build ios --config-only`. |
-| `destinations` | map | none | `firebase` and/or `drive`. TestFlight is configured in Xcode Cloud, not here. |
 
+
+iOS builds go to **TestFlight only**, through the TestFlight post-action of the
+Xcode Cloud workflow. A `destinations` block under `ios` is an error.
 The iOS version is always `X.Y.Z` and the build number is `CI_BUILD_NUMBER`.
 
 ## Destinations
 
-All destinations are skipped when the workflow runs with `dry-run: true`.
+Android only. Each app picks any mix. All destinations are skipped when the
+workflow runs with `dry-run: true`.
+
+| | UAT (`vX.Y.Z-beta.N`) | prod (`vX.Y.Z`) |
+|---|---|---|
+| `playstore` (internal testing) | ✓ | ✓ |
+| `playstore.production` (draft production release) | — | ✓ |
+| `firebase` (App Distribution) | ✓ | ✓ |
+| `drive` (Shared Drive folder) | ✓ | ✓ |
 
 ```yaml
 destinations:
-  playstore: { track: internal, status: completed }   # Android only
+  playstore: { track: internal, production: true }   # production: prod environment only
   firebase:  { groups: "qa-team", testers: "a@x.com" }
   drive:     { folder_id: "0AbC…" }
 ```
 
 | Destination | Keys | Notes |
 |---|---|---|
-| `playstore` | `track` (default `internal`; any testing track, **not** `production`), `status` (`completed` default, or `draft` while the app is still a draft in Play Console) | Uploads the AAB, release notes (≤500 chars) and `mapping.txt`. Release name: `[UAT] 1.4.0-beta.1 (123)`. |
-| `firebase` | `groups`, `testers` (comma-separated, both optional) | Android uploads the APK if built, otherwise the AAB (which requires the Firebase project to be linked to Play). iOS uploads the ad hoc IPA. |
-| `drive` | `folder_id` (**required**, a folder inside a **Shared Drive**) | Android uploads APK and AAB. iOS uploads the ad hoc IPA. |
+| `playstore` | `track` (default `internal`, or another testing track; not `production`), `status` (`completed` by default, or `draft` while the app is still a draft in Play Console), `production` (bool, prod only) | Uploads the AAB and `mapping.txt` to the testing track. Release name: `[UAT] 1.4.0-beta.1 (123)`. With `production: true`, the same build is also added to the **production track as a draft**. Nothing reaches users until someone presses **Release** in Play Console. No release notes are sent to Play. Internal testers are the email lists set on the internal testing track in Play Console. |
+| `firebase` | `groups`, `testers` (comma-separated, both optional) | Uploads the APK if one was built, otherwise the AAB (which requires the Firebase project to be linked to Play). **Release notes** are the tag message (see [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#release-notes)). `groups` are Firebase tester group aliases. |
+| `drive` | `folder_id` (**required**, a folder inside a **Shared Drive**) | Uploads the APK and AAB. |
 
 ## Full example
 
@@ -153,15 +163,14 @@ environments:
       display_name: "MyApp UAT"
       app_icon: AppIcon-UAT
       google_service_info: ios/config/uat/GoogleService-Info.plist
-      destinations:
-        firebase: { groups: "qa-team" }
-        drive:    { folder_id: "0AbCdEfGhIjK" }
   prod:
     dart_define_file: env/prod.json
     android:
-      artifacts: [aab]
+      artifacts: [aab, apk]
       destinations:
-        playstore: { track: internal }
+        playstore: { track: internal, production: true }
+        firebase:  { groups: "release-checkers" }
+        drive:     { folder_id: "0AbCdEfGhIjK" }
     ios:
       display_name: "MyApp"
       app_icon: AppIcon

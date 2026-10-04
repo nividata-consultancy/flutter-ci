@@ -44,14 +44,12 @@ environments:
       google_service_info: ios/config/uat/GoogleService-Info.plist
       build_settings:
         MY_SETTING: "abc"
-      destinations:
-        firebase: { groups: "qa-team" }
   prod:
     dart_define_file: env/prod.json
     android:
       artifacts: [aab]
       destinations:
-        playstore: { track: internal }
+        playstore: { track: internal, production: true }
     ios:
       display_name: "MyApp"
       app_icon: AppIcon

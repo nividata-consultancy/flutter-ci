@@ -47,4 +47,3 @@ app.*.map.json
 # flutter-ci
 /.flutter-ci/
 /ios/Flutter/Environment.xcconfig
-/ios/TestFlight/

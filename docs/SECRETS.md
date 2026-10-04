@@ -65,8 +65,9 @@ Store the keystore and passwords in your password manager too.
 2. Enable the **Google Play Android Developer API** for that project.
 3. **Play Console → Users and permissions → Invite new users**. Use the service
    account email and grant, for this app: *View app information*, *Release apps
-   to testing tracks* and *Manage testing tracks and edit tester lists*. Production
-   permissions are not needed, because CI never releases to production.
+   to testing tracks* and *Manage testing tracks and edit tester lists*. If an app
+   uses `production: true`, also grant *Release to production, exclude devices, and
+   use Play App Signing*. CI still only creates a **draft**, which a person releases.
 4. `gh secret set PLAY_SERVICE_ACCOUNT_JSON < play-sa.json`
 
 Note that the **first upload of a new app must be done manually** in Play Console. See
@@ -74,10 +75,12 @@ Note that the **first upload of a new app must be done manually** in Play Consol
 
 ## Firebase App Distribution
 
+Android only (iOS builds go to TestFlight only).
+
 1. Firebase console → Project settings → **Service accounts**, or Google Cloud
    IAM. Create a service account with the role **Firebase App Distribution
    Admin**, then create a JSON key.
-2. Find the app IDs in Project settings → General → Your apps (`1:…:android:…` and `1:…:ios:…`).
+2. Find the Android app ID in Project settings → General → Your apps (`1:…:android:…`).
 3. Create tester groups in App Distribution → Testers & Groups. Use the group
    **alias** in config (`groups: "qa-team"`).
 4. GitHub:
@@ -85,13 +88,14 @@ Note that the **first upload of a new app must be done manually** in Play Consol
    gh secret set FIREBASE_SERVICE_ACCOUNT_JSON < firebase-sa.json
    gh secret set FIREBASE_ANDROID_APP_ID --body "1:1234567890:android:abc123"
    ```
-5. Xcode Cloud: `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64` (secret) and `FIREBASE_IOS_APP_ID`.
 
 The Firebase CLI is downloaded on demand as the standalone binary from
 `https://firebase.tools/bin/<os>/latest`. Set `FIREBASE_TOOLS_VERSION` (e.g. `14.20.0`)
 in the environment to pin it.
 
 ## Google Drive
+
+Android only.
 
 Service accounts **have no My Drive storage quota**. Uploads into a folder that
 lives in someone's My Drive fail with `storageQuotaExceeded`, even if the folder
@@ -106,7 +110,6 @@ is shared with the service account. Use a **Shared Drive**:
    `https://drive.google.com/drive/folders/<FOLDER_ID>`. Put `<FOLDER_ID>` in
    `destinations.drive.folder_id`.
 4. GitHub: `gh secret set GDRIVE_SERVICE_ACCOUNT_JSON < drive-sa.json`.
-   Xcode Cloud: `GDRIVE_SERVICE_ACCOUNT_JSON_BASE64`.
 
 Uploads use the Drive v3 API directly with `supportsAllDrives=true`. They need only
 `curl`, `openssl` and `yq`.
@@ -139,9 +142,6 @@ Add these in the workflow's **Environment → Environment Variables**, with
 |---|---|---|
 | `FLUTTER_CI_REF` | no | `v1` |
 | `DART_DEFINES_UAT_JSON_BASE64` / `DART_DEFINES_PROD_JSON_BASE64` | yes | `base64 -i env/uat.json \| pbcopy` |
-| `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64` | yes | `base64 -i firebase-sa.json \| pbcopy` |
-| `FIREBASE_IOS_APP_ID` | no | Firebase console |
-| `GDRIVE_SERVICE_ACCOUNT_JSON_BASE64` | yes | `base64 -i drive-sa.json \| pbcopy` |
 | `SLACK_WEBHOOK_URL` | yes | Slack |
 
 iOS code signing is managed by Xcode Cloud (cloud-managed certificates), so no

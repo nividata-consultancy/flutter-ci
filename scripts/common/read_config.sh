@@ -173,12 +173,12 @@ _cfg_validate_android() {
 
   if cfg_has "$d.playstore"; then
     if _cfg_expect_type "$d.playstore" "$dl.playstore" '!!map'; then
-      _cfg_known_keys "$d.playstore" "$dl.playstore" track status
+      _cfg_known_keys "$d.playstore" "$dl.playstore" track status production
       if _cfg_expect_type "$d.playstore.track" "$dl.playstore.track" '!!str'; then
         local track
         track="$(cfg "$d.playstore.track")"
         if [[ "$track" == "production" ]]; then
-          _cfg_err "$dl.playstore.track must not be 'production': CI only uploads to testing tracks; promote to production manually in Play Console"
+          _cfg_err "$dl.playstore.track must be a testing track (e.g. internal). For production use 'production: true' (prod environment only), which creates a draft release"
         elif [[ ! "$track" =~ ^[A-Za-z0-9_:-]+$ ]]; then
           _cfg_err "$dl.playstore.track '$track' is not a valid track name"
         fi
@@ -188,6 +188,11 @@ _cfg_validate_android() {
           completed | draft) ;;
           *) _cfg_err "$dl.playstore.status must be 'completed' or 'draft'" ;;
         esac
+      fi
+      if _cfg_expect_type "$d.playstore.production" "$dl.playstore.production" '!!bool'; then
+        if [[ "$env" != "prod" && "$(cfg "$d.playstore.production")" == "true" ]]; then
+          _cfg_err "$dl.playstore.production is only allowed in the prod environment"
+        fi
       fi
     fi
     [[ $has_aab -eq 1 ]] || _cfg_err "$dl.playstore needs 'aab' in $label.artifacts (Play only accepts app bundles)"
@@ -245,20 +250,8 @@ _cfg_validate_ios() {
     done < <(yq e "($p.build_settings) | keys | .[]" "$FLUTTER_CI_CONFIG")
   fi
 
-  local d="$p.destinations" dl="$label.destinations"
-  _cfg_expect_type "$d" "$dl" '!!map' || return 0
-  if cfg_has "$d.testflight"; then
-    _cfg_err "$dl.testflight: TestFlight is configured as a post-action in the Xcode Cloud workflow, not in config.yaml"
-  fi
-  _cfg_known_keys "$d" "$dl" firebase drive testflight
-  if cfg_has "$d.firebase"; then
-    _cfg_validate_firebase "$d.firebase" "$dl.firebase"
-  fi
-  if cfg_has "$d.drive"; then
-    if _cfg_expect_type "$d.drive" "$dl.drive" '!!map'; then
-      _cfg_known_keys "$d.drive" "$dl.drive" folder_id
-      _cfg_validate_folder_id "$d.drive.folder_id" "$dl.drive.folder_id"
-    fi
+  if cfg_has "$p.destinations"; then
+    _cfg_err "$label.destinations: iOS builds go to TestFlight only (set up in the Xcode Cloud workflow); remove this block"
   fi
 }
 

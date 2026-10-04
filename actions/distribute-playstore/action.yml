@@ -1,7 +1,8 @@
 name: flutter-ci / distribute-playstore
 description: >
-  Upload an AAB to a Google Play testing track (never production). The app's
-  very first upload must be done manually in Play Console.
+  Upload an AAB to a Google Play testing track (e.g. internal testing) and,
+  optionally, add the same build to the production track as a DRAFT release.
+  The app's very first upload must be done manually in Play Console.
 inputs:
   service-account-json:
     description: PLAY_SERVICE_ACCOUNT_JSON (plain JSON)
@@ -21,9 +22,12 @@ inputs:
   release-name:
     description: Release name shown in Play Console
     required: true
-  release-notes-file:
-    description: Plain-text release notes (truncated to 500 characters)
-    default: ""
+  version-code:
+    description: versionCode of the AAB (used for the production draft)
+    required: true
+  production:
+    description: '"true" to also create a draft release on the production track'
+    default: "false"
   mapping-file:
     description: R8 mapping.txt to upload for deobfuscation
     default: ""
@@ -34,25 +38,15 @@ runs:
   using: composite
   steps:
     - name: Check inputs
-      id: prep
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
       env:
         SA: ${{ inputs.service-account-json }}
         TRACK: ${{ inputs.track }}
-        NOTES: ${{ inputs.release-notes-file }}
         LOG_SH: ${{ github.action_path }}/../../scripts/common/log.sh
       run: |
         source "$LOG_SH"
         [[ -n "$SA" ]] || die "PLAY_SERVICE_ACCOUNT_JSON is not set." "SECRETS.md#google-play"
-        [[ "$TRACK" != "production" ]] || die "Refusing to upload to the production track." "TAGGING_AND_RELEASES.md#promoting-to-production"
-        dir="$RUNNER_TEMP/flutter-ci/whatsnew"
-        rm -rf "$dir" && mkdir -p "$dir"
-        if [[ -n "$NOTES" && -f "$NOTES" ]]; then
-          # Play allows 500 characters per language.
-          LC_ALL=C head -c 500 "$NOTES" | iconv -c -f UTF-8 -t UTF-8 >"$dir/whatsnew-en-US" || true
-        fi
-        echo "whatsnew-dir=$dir" >>"$GITHUB_OUTPUT"
+        [[ "$TRACK" != "production" ]] || die "Use 'production: true' (draft) instead of track: production." "CONFIG_REFERENCE.md#destinations"
 
     - name: Upload to Google Play (${{ inputs.track }})
       uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
@@ -61,7 +55,16 @@ runs:
         packageName: ${{ inputs.package-name }}
         releaseFiles: ${{ inputs.working-directory }}/${{ inputs.aab }}
         releaseName: ${{ inputs.release-name }}
-        track: ${{ inputs.track }}
+        tracks: ${{ inputs.track }}
         status: ${{ inputs.status }}
-        whatsNewDirectory: ${{ steps.prep.outputs.whatsnew-dir }}
         mappingFile: ${{ inputs.mapping-file != '' && format('{0}/{1}', inputs.working-directory, inputs.mapping-file) || '' }}
+
+    - name: Draft release on production
+      if: inputs.production == 'true'
+      shell: bash
+      env:
+        PLAY_SERVICE_ACCOUNT_JSON: ${{ inputs.service-account-json }}
+        PACKAGE_NAME: ${{ inputs.package-name }}
+        VERSION_CODE: ${{ inputs.version-code }}
+        RELEASE_NAME: ${{ inputs.release-name }}
+      run: '"$GITHUB_ACTION_PATH/../../scripts/android/play_production_draft.sh"'

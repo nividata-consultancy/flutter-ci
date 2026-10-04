@@ -103,7 +103,7 @@ set_yq() { yq -i e "$1" "$CFG"; }
   set_yq '.environments.prod.android.destinations.playstore.track = "production"'
   run "$SCRIPTS/read_config.sh" validate "$CFG"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"must not be 'production'"* ]]
+  [[ "$output" == *"must be a testing track"* ]]
 }
 
 @test "playstore requires package name" {
@@ -120,11 +120,18 @@ set_yq() { yq -i e "$1" "$CFG"; }
   [[ "$output" == *"Shared Drive"* ]]
 }
 
-@test "testflight under ios destinations explains where it lives" {
-  set_yq '.environments.uat.ios.destinations.testflight = {}'
+@test "ios destinations are refused (TestFlight only)" {
+  set_yq '.environments.uat.ios.destinations.firebase = {}'
   run "$SCRIPTS/read_config.sh" validate "$CFG"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"configured as a post-action in the Xcode Cloud workflow"* ]]
+  [[ "$output" == *"iOS builds go to TestFlight only"* ]]
+}
+
+@test "play production draft is prod-only" {
+  set_yq '.environments.uat.android.destinations.playstore.production = true'
+  run "$SCRIPTS/read_config.sh" validate "$CFG"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"production is only allowed in the prod environment"* ]]
 }
 
 @test "invalid ios build setting name" {
@@ -170,8 +177,7 @@ set_yq() { yq -i e "$1" "$CFG"; }
   source "$TMP/ctx.env"
   [ "$IOS_DISPLAY_NAME" = "MyApp UAT" ]
   [ "$IOS_APP_ICON" = "AppIcon-UAT" ]
-  [ "$FIREBASE_ENABLED" = true ]
-  [ "$DRIVE_ENABLED" = false ]
+  [ -z "${FIREBASE_ENABLED:-}" ]
 }
 
 @test "context writes GITHUB_OUTPUT" {
@@ -181,4 +187,5 @@ set_yq() { yq -i e "$1" "$CFG"; }
   grep -qx 'ENVIRONMENT=prod' "$TMP/out"
   grep -qx 'ANDROID_FLAVOR=' "$TMP/out"
   grep -qx 'FIREBASE_ENABLED=false' "$TMP/out"
+  grep -qx 'PLAYSTORE_PRODUCTION=true' "$TMP/out"
 }

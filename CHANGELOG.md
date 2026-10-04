@@ -15,10 +15,13 @@ in [docs/MAINTAINING.md](docs/MAINTAINING.md#migrations).
 - Optional prod guard (`app.prod_branches`): when set, prod tags must be on one of
   those branches; when unset, prod tags build from any branch. Shallow-clone safe.
 - Release notes from the annotated tag message (`git tag -a … -m …`), falling
-  back to commit subjects; used for TestFlight, Firebase, Play and GitHub Releases.
+  back to commit subjects; sent to Firebase App Distribution (and the GitHub Release).
+- Android destinations per app: Play internal testing, optional draft production
+  release (prod only), Firebase App Distribution with tester groups, Shared Drive.
+- iOS builds go to TestFlight only.
 - Reusable Android workflow `android-release.yml` with composite actions:
   setup-flutter, android-signing, distribute-playstore, distribute-firebase,
   distribute-drive, notify. Dry-run mode.
 - Xcode Cloud scripts (`post_clone.sh`, `post_xcodebuild.sh`) and ~10-line app
-  bootstraps; `[UAT]` / `[PROD]` TestFlight "What to Test" labels.
+  bootstraps.
 - Templates, docs, bats tests, `self-test.yml`, `release.yml`.

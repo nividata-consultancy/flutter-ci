@@ -102,6 +102,7 @@ resolve_context() {
     fi
     _ctx PLAYSTORE_TRACK "$(cfg "$a.destinations.playstore.track" internal)"
     _ctx PLAYSTORE_STATUS "$(cfg "$a.destinations.playstore.status" completed)"
+    _ctx PLAYSTORE_PRODUCTION "$(cfg "$a.destinations.playstore.production" false)"
     _ctx_destinations "$a.destinations"
     _ctx GITHUB_RELEASE "$(cfg '.app.github_release.enabled' true)"
     _ctx GITHUB_RELEASE_ATTACH "$(cfg '.app.github_release.attach_artifacts' false)"
@@ -111,7 +112,6 @@ resolve_context() {
     _ctx IOS_APP_ICON "$(cfg "$i.app_icon")"
     _ctx IOS_GOOGLE_SERVICE_INFO "$(cfg "$i.google_service_info")"
     _ctx IOS_TARGET "$(cfg "$i.target")"
-    _ctx_destinations "$i.destinations"
   fi
 }
 

@@ -42,12 +42,8 @@ Connect → your app → **Xcode Cloud → Manage Workflows**.
   | `FLUTTER_CI_REF` | `v1` (canary apps: `main`) | no | always |
   | `DART_DEFINES_UAT_JSON_BASE64` | `base64` of `env/uat.json` | yes | only if `env/uat.json` is not committed |
   | `DART_DEFINES_PROD_JSON_BASE64` | `base64` of `env/prod.json` | yes | only if `env/prod.json` is not committed |
-  | `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64` | base64 service account JSON | yes | iOS `firebase` destination |
-  | `FIREBASE_IOS_APP_ID` | `1:123…:ios:abc…` | no | iOS `firebase` destination |
-  | `GDRIVE_SERVICE_ACCOUNT_JSON_BASE64` | base64 service account JSON | yes | iOS `drive` destination |
   | `SLACK_WEBHOOK_URL` | webhook URL | yes | optional notifications |
   | `FLUTTER_CI_APP_DIR` | e.g. `apps/mobile` | no | only if the Flutter app is not at the repo root |
-  | `FLUTTER_CI_STRICT` | `1` | no | optional: fail the build when Firebase/Drive uploads fail |
 
   Create the base64 values with `base64 -i file.json | pbcopy`. See [SECRETS.md](SECRETS.md#xcode-cloud).
 
@@ -84,9 +80,9 @@ CI never submits for App Store review and never releases to users.
 
 ### Save, then build
 
-Push a tag such as `v0.1.0-beta.1`. In the build log, check:
+Push a tag such as `v0.1.0-beta.1`. Then check:
 - the `ci_post_clone.sh` output, which ends with `ci_post_clone.sh done: [UAT] v0.1.0-beta.1 (N)`;
-- that TestFlight shows the build with "What to Test" starting with `[UAT] v0.1.0-beta.1 · <sha>`.
+- that the build reaches TestFlight with the UAT name and icon.
 
 ## How the scripts run
 
@@ -104,33 +100,15 @@ Push a tag such as `v0.1.0-beta.1`. In the build log, check:
    - saves `.flutter-ci/state.env`.
 2. Xcode Cloud archives `Runner`.
 3. `ci_post_xcodebuild.sh` runs `scripts/xcode-cloud/post_xcodebuild.sh`, which
-   only acts when `CI_XCODEBUILD_ACTION=archive`. It:
-   - writes `ios/TestFlight/WhatToTest.en-US.txt`;
-   - optionally uploads the ad hoc IPA to Firebase and Drive;
-   - optionally notifies Slack.
+   only sends the optional Slack notification after the archive.
 4. The TestFlight post-action distributes the build to internal testers.
 
-iOS version numbers are always `X.Y.Z`, because Apple only allows numbers.
-The build number is Xcode Cloud's `CI_BUILD_NUMBER`. UAT and prod builds can
-therefore show the same version in TestFlight. **The `[UAT]` / `[PROD]` label in
-"What to Test" is how you tell them apart.**
-
-## Ad hoc IPA for Firebase and Drive
-
-TestFlight needs nothing extra. If `.ci/config.yaml` lists `firebase` or
-`drive` under `environments.<env>.ios.destinations`, `ci_post_xcodebuild.sh`
-uploads the **ad hoc-signed** IPA from `$CI_AD_HOC_SIGNED_APP_PATH`.
-
-- Ad hoc builds install **only on devices registered** in the Apple Developer
-  account (Certificates, IDs & Profiles → Devices) at the time of the build. If
-  you add a tester's device, the next build includes it. Older builds do not.
-- Apple's documentation lists `CI_AD_HOC_SIGNED_APP_PATH` for archive actions but
-  does not say which distribution settings produce it (see
-  [ASSUMPTIONS.md](ASSUMPTIONS.md)). If the variable is empty, the script logs
-  `ERROR: No ad hoc IPA found…`, still lets the build and TestFlight succeed, and
-  reports it in Slack. Set `FLUTTER_CI_STRICT=1` to make this fail the build instead.
-- On the first build with these destinations, check the log for
-  `Uploading … to Firebase App Distribution` / `Google Drive`.
+iOS builds go to **TestFlight only**. There is no Firebase, Drive or release-notes
+step for iOS. The iOS version is always `X.Y.Z`, because Apple only allows
+numbers, and the build number is Xcode Cloud's `CI_BUILD_NUMBER`. UAT and prod builds therefore
+show the same version in TestFlight. Tell them apart by the app name and icon on
+the device, or by the tag shown in **Xcode Cloud → Builds** (see
+[TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#telling-uat-and-prod-builds-apart)).
 
 ## Updating flutter-ci
 

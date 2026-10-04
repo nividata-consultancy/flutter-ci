@@ -9,40 +9,8 @@
 # Prints the file's webViewLink on success. Needs curl, openssl and yq.
 
 _GDRIVE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/common/util.sh
-source "$_GDRIVE_DIR/util.sh"
-
-_b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
-
-# _gdrive_token <sa-json-file> — print an OAuth access token.
-_gdrive_token() {
-  local sa="$1" email key_file token_uri now header claims unsigned sig resp token
-  email="$(yq -p json -oy e '.client_email // ""' "$sa")"
-  token_uri="$(yq -p json -oy e '.token_uri // "https://oauth2.googleapis.com/token"' "$sa")"
-  [[ -n "$email" ]] || { log_error "Drive: the service account JSON has no client_email." "SECRETS.md#google-drive"; return 1; }
-
-  key_file="$(ci_temp_dir)/gdrive-key.pem"
-  yq -p json -oy e '.private_key' "$sa" | write_secret_file "$key_file"
-
-  now="$(date +%s)"
-  header="$(printf '%s' '{"alg":"RS256","typ":"JWT"}' | _b64url)"
-  claims="$(EMAIL="$email" AUD="$token_uri" NOW="$now" yq -n -o json -I 0 \
-    '.iss = strenv(EMAIL) | .scope = "https://www.googleapis.com/auth/drive" | .aud = strenv(AUD) | .iat = (strenv(NOW) | tonumber) | .exp = ((strenv(NOW) | tonumber) + 3600)' | _b64url)"
-  unsigned="$header.$claims"
-  sig="$(printf '%s' "$unsigned" | openssl dgst -sha256 -sign "$key_file" | _b64url)" || { rm -f "$key_file"; return 1; }
-  rm -f "$key_file"
-
-  resp="$(curl -sS -X POST "$token_uri" \
-    --data-urlencode 'grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer' \
-    --data-urlencode "assertion=$unsigned.$sig")" || { log_error "Drive: token request failed."; return 1; }
-  token="$(printf '%s' "$resp" | yq -p json -oy e '.access_token // ""' -)"
-  if [[ -z "$token" ]]; then
-    log_error "Drive: could not get an access token: $(printf '%s' "$resp" | yq -p json -oy e '.error_description // .error // "unknown error"' -)" "SECRETS.md#google-drive"
-    return 1
-  fi
-  mask "$token"
-  printf '%s' "$token"
-}
+# shellcheck source=scripts/common/google_auth.sh
+source "$_GDRIVE_DIR/google_auth.sh"
 
 gdrive_upload() {
   local file="$1" folder="$2" name="${3:-}"
@@ -56,7 +24,7 @@ gdrive_upload() {
   tmp="$(ci_temp_dir)"
   sa="$tmp/gdrive-sa.json"
   printf '%s' "$sa_json" | write_secret_file "$sa"
-  token="$(_gdrive_token "$sa")" || { rm -f "$sa"; return 1; }
+  token="$(google_access_token "$sa" https://www.googleapis.com/auth/drive)" || { rm -f "$sa"; return 1; }
   rm -f "$sa"
 
   local meta headers body code location

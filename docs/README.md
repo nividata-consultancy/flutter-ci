@@ -27,7 +27,7 @@ app.
    │     secrets passed one by one                                           ├ checks out flutter-ci@ci-lib-ref → .flutter-ci/
    │                                                                         ├ scripts/common: tag, config, prod guard
    │                                                                         ├ build AAB/APK
-   │                                                                         └ Play internal / Firebase / Drive / GitHub Release
+   │                                                                         └ Play internal (+ prod draft) / Firebase / Drive / GitHub Release
    │
    └─ Xcode Cloud (Tag Changes "v*", Archive Runner)
          ios/ci_scripts/ci_post_clone.sh  (≈10 lines) ── downloads flutter-ci@FLUTTER_CI_REF ─► scripts/xcode-cloud/post_clone.sh
@@ -38,8 +38,9 @@ app.
 
 - **Tags drive everything.** `vX.Y.Z-beta.N` builds UAT and `vX.Y.Z` builds prod. One
   parser, `scripts/common/parse_tag.sh`, serves both platforms.
-- **Same app ID for UAT and prod.** Everything goes to testing tracks first (Play
-  internal, TestFlight). Promotion to production is manual.
+- **Same app ID for UAT and prod.** Android goes to Play internal testing,
+  Firebase and Drive as each app chooses. Prod can also create a **draft**
+  production release. iOS goes to TestFlight only. Releasing to users is always a manual click.
 - **The repo is public** because the apps live in different GitHub organizations
   and Apple teams. It holds no secrets, client names, bundle IDs or internal URLs.
 

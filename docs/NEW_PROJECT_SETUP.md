@@ -2,9 +2,9 @@
 
 A copy-paste checklist that takes a Flutter app to working CI. Work through it
 top to bottom; most steps take a few minutes. When you are done, pushing
-`v0.1.0-beta.1` produces an Android UAT build on Play internal testing and an
-iOS UAT build in TestFlight labeled `[UAT]`, and pushing `v0.1.0`
-produces `[PROD]` builds in both places.
+`v0.1.0-beta.1` produces an Android UAT build (Play internal testing, plus
+Firebase/Drive if configured) and an iOS UAT build in TestFlight, and pushing
+`v0.1.0` produces prod builds in both places.
 
 Paths below are relative to your app repo. `nividata-consultancy/flutter-ci` is this
 repository.
@@ -198,12 +198,12 @@ Follow [XCODE_CLOUD_SETUP.md](XCODE_CLOUD_SETUP.md). In short:
 - Start condition: **Tag Changes**, custom tags beginning with `v`.
 - Action: **Archive** of `Runner`, with distribution preparation **TestFlight and App Store** (so `[PROD]` builds can be submitted).
 - Post-action: **TestFlight Internal Testing** to your QA group.
-- Environment variables: `FLUTTER_CI_REF=v1`, plus any base64 secrets.
+- Environment variables: `FLUTTER_CI_REF=v1`, plus the dart-define secrets if `env/*.json` is not committed.
 
 ## 7. First test build (UAT)
 
 Commit everything and push. Then create an **annotated** tag. Its message
-becomes the release notes testers see in TestFlight, Firebase and Play:
+becomes the Firebase App Distribution release notes:
 
 ```bash
 git tag -a v0.1.0-beta.1 -m "First CI build
@@ -214,9 +214,10 @@ git push origin v0.1.0-beta.1
 - **GitHub → Actions → Release**: the run should finish green. The job summary
   shows the environment, version, versionCode and destinations. The AAB is on
   Play's internal track as `[UAT] 0.1.0-beta.1 (N)`.
-- **App Store Connect → Xcode Cloud**: the build runs and reaches TestFlight. Its
-  "What to Test" starts with `[UAT] v0.1.0-beta.1 · <sha>`, and the app is
-  named "MyApp UAT" with the UAT icon.
+- **App Store Connect → Xcode Cloud**: the build runs and reaches TestFlight. The
+  app is named "MyApp UAT" and has the UAT icon.
+- **Firebase** (if configured): testers in your group get the build, with the
+  tag message as release notes.
 
 If something fails, the error message links to the right section of
 [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
@@ -233,12 +234,13 @@ git tag -a v0.1.0 -m "First release"
 git push origin v0.1.0
 ```
 
-This produces `[PROD]` builds on Play internal testing and in TestFlight. Promote
+This produces a prod build on Play internal testing, plus a **draft** production
+release if `production: true` is set, and a prod build in TestFlight. Release
 them manually as described in [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#promoting-to-production).
 
 ## Done checklist
 
-- [ ] `v0.1.0-beta.1` gives an Android UAT build on Play internal and an iOS `[UAT]` build in TestFlight
-- [ ] `v0.1.0` gives `[PROD]` builds in both places
-- [ ] Testers see your tag message as the release notes (TestFlight "What to Test", Firebase, Play)
+- [ ] `v0.1.0-beta.1` gives an Android UAT build at the configured destinations and an iOS UAT build in TestFlight
+- [ ] `v0.1.0` gives prod builds in both places (and a draft production release on Play if enabled)
+- [ ] Firebase testers see your tag message as the release notes
 - [ ] The team knows the rules in [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md)

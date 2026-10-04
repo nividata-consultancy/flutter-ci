@@ -218,7 +218,7 @@ jobs:
           path: ${{ inputs.app-directory }}/${{ steps.build.outputs.ARTIFACTS_DIR }}
           if-no-files-found: error
 
-      - name: Release notes (tag message, else commits)
+      - name: Release notes for Firebase (tag message, else commits)
         id: notes
         env:
           TAG: ${{ steps.ctx.outputs.TAG }}
@@ -232,7 +232,9 @@ jobs:
           echo "::add-mask::$auth"
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
             fetch --quiet --force --no-tags origin "+refs/tags/$TAG:refs/tags/$TAG" || true
-          "$FLUTTER_CI/scripts/common/release_notes.sh" "$TAG" --max-bytes 500 --max-commits 5 > "$dir/notes-short.txt"
+          # Firebase App Distribution release notes (the only tester-facing notes).
+          "$FLUTTER_CI/scripts/common/release_notes.sh" "$TAG" --max-bytes 1000 --max-commits 5 > "$dir/notes-short.txt"
+          # GitHub Release body on the app repo (for developers).
           "$FLUTTER_CI/scripts/common/release_notes.sh" "$TAG" --max-bytes 4000 --max-commits 30 --with-commits > "$dir/notes-long.txt"
           cat "$dir/notes-long.txt"
           echo "short=$dir/notes-short.txt" >> "$GITHUB_OUTPUT"
@@ -249,7 +251,8 @@ jobs:
           track: ${{ steps.ctx.outputs.PLAYSTORE_TRACK }}
           status: ${{ steps.ctx.outputs.PLAYSTORE_STATUS }}
           release-name: "[${{ steps.ctx.outputs.ENV_LABEL }}] ${{ steps.ctx.outputs.VERSION_NAME_FULL }} (${{ steps.ctx.outputs.BUILD_NUMBER }})"
-          release-notes-file: ${{ steps.notes.outputs.short }}
+          version-code: ${{ steps.ctx.outputs.BUILD_NUMBER }}
+          production: ${{ steps.ctx.outputs.PLAYSTORE_PRODUCTION }}
           mapping-file: ${{ steps.build.outputs.MAPPING_PATH }}
           working-directory: ${{ inputs.app-directory }}
 
@@ -305,7 +308,7 @@ jobs:
           context-json: ${{ toJSON(steps.ctx.outputs) }}
           slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           destinations: |
-            ${{ steps.play.outcome && format('Google Play ({0})|{1}|', steps.ctx.outputs.PLAYSTORE_TRACK, steps.play.outcome) || '' }}
+            ${{ steps.play.outcome && format('Google Play ({0}{1})|{2}|', steps.ctx.outputs.PLAYSTORE_TRACK, steps.ctx.outputs.PLAYSTORE_PRODUCTION == 'true' && ' + production draft' || '', steps.play.outcome) || '' }}
             ${{ steps.firebase.outcome && format('Firebase App Distribution|{0}|{1}', steps.firebase.outcome, steps.firebase.outputs.link) || '' }}
             ${{ steps.drive.outcome && format('Google Drive|{0}|{1}', steps.drive.outcome, steps.drive.outputs.link) || '' }}
             ${{ steps.release.outcome && format('GitHub Release|{0}|{1}', steps.release.outcome, steps.release.outputs.url) || '' }}
