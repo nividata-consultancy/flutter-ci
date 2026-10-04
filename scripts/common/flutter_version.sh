@@ -17,7 +17,7 @@ FLUTTER_CI_FLUTTER_VERSION_RE='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+\.[0-9]+\.pre)?$'
 
 _fv_from_fvmrc() {
   # .fvmrc is JSON; yq reads JSON with -p json.
-  yq -p json e '.flutter // ""' "$1" 2>/dev/null
+  yq -p json -oy e '.flutter // ""' "$1" 2>/dev/null
 }
 
 _fv_from_pubspec() {

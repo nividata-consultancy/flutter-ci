@@ -1,0 +1,41 @@
+name: flutter-ci / distribute-drive
+description: >
+  Upload files to a folder in a Google Shared Drive with a service account
+  (service accounts have no My Drive quota).
+inputs:
+  service-account-json:
+    description: GDRIVE_SERVICE_ACCOUNT_JSON (plain JSON)
+    required: true
+  folder-id:
+    description: ID of a folder inside a Shared Drive
+    required: true
+  files:
+    description: Newline-separated file paths
+    required: true
+  working-directory:
+    description: App root
+    default: .
+outputs:
+  link:
+    description: Link to the last uploaded file
+    value: ${{ steps.upload.outputs.link }}
+runs:
+  using: composite
+  steps:
+    - name: Upload to Google Drive
+      id: upload
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GDRIVE_SERVICE_ACCOUNT_JSON: ${{ inputs.service-account-json }}
+        FOLDER_ID: ${{ inputs.folder-id }}
+        FILES: ${{ inputs.files }}
+        SCRIPT: ${{ github.action_path }}/../../scripts/common/gdrive_upload.sh
+      run: |
+        link=""
+        while IFS= read -r f; do
+          [[ -z "$f" ]] && continue
+          link="$("$SCRIPT" "$f" "$FOLDER_ID")"
+          echo "Uploaded $f: $link"
+        done <<<"$FILES"
+        echo "link=$link" >>"$GITHUB_OUTPUT"

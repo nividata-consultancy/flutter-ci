@@ -1,0 +1,304 @@
+# flutter-ci — reusable Android release workflow.
+#
+# Called from each app's .github/workflows/release.yml (see
+# templates/.github/workflows/release.yml) on tag push:
+#   vX.Y.Z-beta.N -> uat,  vX.Y.Z -> prod (must be on a prod branch).
+#
+# Callers may live in other organizations, where `secrets: inherit` does not
+# work, so every secret is declared here and must be passed explicitly.
+#
+# The workflow checks out flutter-ci itself into .flutter-ci/ at `ci-lib-ref`
+# and uses ./.flutter-ci/actions/* and ./.flutter-ci/scripts/*: inside a
+# reusable workflow `./actions/...` would resolve to the *caller's* repo.
+name: flutter-ci android release
+
+on:
+  workflow_call:
+    inputs:
+      ci-lib-ref:
+        description: Ref of flutter-ci to use for actions/scripts. Keep it equal to the @ref of this workflow.
+        type: string
+        default: v1
+      ci-lib-repository:
+        description: Repository of flutter-ci (change only for forks).
+        type: string
+        default: OWNER/flutter-ci
+      config-path:
+        description: Path of the config file, relative to app-directory.
+        type: string
+        default: .ci/config.yaml
+      app-directory:
+        description: Flutter app root inside the repository.
+        type: string
+        default: .
+      dry-run:
+        description: Build and upload run artifacts, but do not distribute or create a GitHub Release.
+        type: boolean
+        default: false
+      tag:
+        description: Tag to simulate. Only allowed with dry-run (used by self-tests).
+        type: string
+        default: ""
+      runs-on:
+        description: Runner label.
+        type: string
+        default: ubuntu-latest
+      timeout-minutes:
+        description: Job timeout.
+        type: number
+        default: 60
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        description: Upload keystore (.jks), base64-encoded. Required unless dry-run.
+        required: false
+      ANDROID_KEYSTORE_PASSWORD:
+        description: Keystore password. Required unless dry-run.
+        required: false
+      ANDROID_KEY_ALIAS:
+        description: Key alias. Required unless dry-run.
+        required: false
+      ANDROID_KEY_PASSWORD:
+        description: Key password. Required unless dry-run.
+        required: false
+      PLAY_SERVICE_ACCOUNT_JSON:
+        description: Google Play service account JSON (playstore destination).
+        required: false
+      FIREBASE_SERVICE_ACCOUNT_JSON:
+        description: Firebase service account JSON (firebase destination).
+        required: false
+      FIREBASE_ANDROID_APP_ID:
+        description: Firebase Android app ID (firebase destination).
+        required: false
+      GDRIVE_SERVICE_ACCOUNT_JSON:
+        description: Google Drive service account JSON (drive destination).
+        required: false
+      DART_DEFINES_UAT_JSON:
+        description: UAT dart defines JSON, when env/uat.json is not committed.
+        required: false
+      DART_DEFINES_PROD_JSON:
+        description: Prod dart defines JSON, when env/prod.json is not committed.
+        required: false
+      SLACK_WEBHOOK_URL:
+        description: Slack incoming webhook for notifications.
+        required: false
+    outputs:
+      environment:
+        description: uat | prod
+        value: ${{ jobs.android.outputs.environment }}
+      version-name:
+        description: versionName used for the build
+        value: ${{ jobs.android.outputs.version-name }}
+      build-number:
+        description: versionCode used for the build
+        value: ${{ jobs.android.outputs.build-number }}
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android ${{ inputs.tag || github.ref_name }}${{ inputs.dry-run && ' (dry run)' || '' }}
+    runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    permissions:
+      contents: write # create the GitHub Release on the app repo
+    concurrency:
+      group: flutter-ci-android-${{ github.repository }}-${{ inputs.tag || github.ref }}
+      cancel-in-progress: false
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.app-directory }}
+    env:
+      FLUTTER_CI: ${{ github.workspace }}/.flutter-ci
+    outputs:
+      environment: ${{ steps.ctx.outputs.ENVIRONMENT }}
+      version-name: ${{ steps.ctx.outputs.VERSION_NAME_FULL }}
+      build-number: ${{ steps.ctx.outputs.BUILD_NUMBER }}
+
+    steps:
+      - name: Check out app
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history + tags for the prod guard and release notes
+          persist-credentials: false
+
+      - name: Check out flutter-ci (${{ inputs.ci-lib-ref }})
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ inputs.ci-lib-repository }}
+          ref: ${{ inputs.ci-lib-ref }}
+          path: .flutter-ci
+          persist-credentials: false
+          sparse-checkout: |
+            actions
+            scripts
+
+      - name: Keep .flutter-ci out of git status
+        working-directory: .
+        run: echo "/.flutter-ci/" >> .git/info/exclude
+
+      - name: Parse tag and validate config
+        id: ctx
+        env:
+          CONFIG_PATH: ${{ inputs.config-path }}
+          TAG_OVERRIDE: ${{ inputs.tag }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: '"$FLUTTER_CI/scripts/android/resolve.sh"'
+
+      - name: Prod guard
+        if: steps.ctx.outputs.ENVIRONMENT == 'prod'
+        env:
+          PROD_BRANCHES: ${{ steps.ctx.outputs.PROD_BRANCHES }}
+        run: |
+          # shellcheck disable=SC2086 # PROD_BRANCHES is a space-separated list
+          "$FLUTTER_CI/scripts/common/prod_guard.sh" "$GITHUB_SHA" $PROD_BRANCHES
+
+      - name: Set up Java and Flutter
+        uses: ./.flutter-ci/actions/setup-flutter
+        with:
+          flutter-version: ${{ steps.ctx.outputs.FLUTTER_VERSION }}
+          flutter-channel: ${{ steps.ctx.outputs.FLUTTER_CHANNEL }}
+          java-version: ${{ steps.ctx.outputs.JAVA_VERSION }}
+          working-directory: ${{ inputs.app-directory }}
+
+      - name: Tests
+        if: steps.ctx.outputs.RUN_TESTS == 'true'
+        run: |
+          if [[ -d test ]]; then
+            flutter test
+          else
+            echo "No test/ directory; skipping tests."
+          fi
+
+      - name: Analyze
+        if: steps.ctx.outputs.RUN_ANALYZE == 'true'
+        run: flutter analyze
+
+      - name: Resolve dart defines
+        id: defines
+        env:
+          DART_DEFINES_UAT_JSON: ${{ steps.ctx.outputs.ENVIRONMENT == 'uat' && secrets.DART_DEFINES_UAT_JSON || '' }}
+          DART_DEFINES_PROD_JSON: ${{ steps.ctx.outputs.ENVIRONMENT == 'prod' && secrets.DART_DEFINES_PROD_JSON || '' }}
+          ENVIRONMENT: ${{ steps.ctx.outputs.ENVIRONMENT }}
+          CONFIGURED: ${{ steps.ctx.outputs.DART_DEFINE_FILE }}
+        run: |
+          path="$("$FLUTTER_CI/scripts/common/dart_defines.sh" . "$ENVIRONMENT" "$CONFIGURED")"
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+
+      - name: Write signing config
+        uses: ./.flutter-ci/actions/android-signing
+        with:
+          mode: write
+          working-directory: ${{ inputs.app-directory }}
+          allow-missing: ${{ inputs.dry-run }}
+          keystore-base64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          keystore-password: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          key-alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          key-password: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Build
+        id: build
+        env:
+          ARTIFACTS: ${{ steps.ctx.outputs.ANDROID_ARTIFACTS }}
+          FLAVOR: ${{ steps.ctx.outputs.ANDROID_FLAVOR }}
+          TARGET: ${{ steps.ctx.outputs.ANDROID_TARGET }}
+          DART_DEFINE_PATH: ${{ steps.defines.outputs.path }}
+          BUILD_NAME: ${{ steps.ctx.outputs.VERSION_NAME_FULL }}
+          BUILD_NUMBER: ${{ steps.ctx.outputs.BUILD_NUMBER }}
+          OBFUSCATE: ${{ steps.ctx.outputs.OBFUSCATE }}
+          APP_NAME: ${{ steps.ctx.outputs.APP_NAME }}
+          ENVIRONMENT: ${{ steps.ctx.outputs.ENVIRONMENT }}
+        run: '"$FLUTTER_CI/scripts/android/build.sh"'
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.build.outputs.ARTIFACT_BASENAME }}
+          path: ${{ inputs.app-directory }}/${{ steps.build.outputs.ARTIFACTS_DIR }}
+          if-no-files-found: error
+
+      - name: Release notes
+        id: notes
+        env:
+          TAG: ${{ steps.ctx.outputs.TAG }}
+        run: |
+          dir="$RUNNER_TEMP/flutter-ci"
+          mkdir -p "$dir"
+          "$FLUTTER_CI/scripts/common/release_notes.sh" "$TAG" --max-bytes 500 --max-commits 5 > "$dir/notes-short.txt"
+          "$FLUTTER_CI/scripts/common/release_notes.sh" "$TAG" --max-bytes 4000 --max-commits 30 > "$dir/notes-long.txt"
+          cat "$dir/notes-long.txt"
+          echo "short=$dir/notes-short.txt" >> "$GITHUB_OUTPUT"
+          echo "long=$dir/notes-long.txt" >> "$GITHUB_OUTPUT"
+
+      - name: Distribute to Google Play
+        id: play
+        if: ${{ !inputs.dry-run && steps.ctx.outputs.PLAYSTORE_ENABLED == 'true' }}
+        uses: ./.flutter-ci/actions/distribute-playstore
+        with:
+          service-account-json: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          package-name: ${{ steps.ctx.outputs.ANDROID_PACKAGE_NAME }}
+          aab: ${{ steps.build.outputs.AAB_PATH }}
+          track: ${{ steps.ctx.outputs.PLAYSTORE_TRACK }}
+          status: ${{ steps.ctx.outputs.PLAYSTORE_STATUS }}
+          release-name: "[${{ steps.ctx.outputs.ENV_LABEL }}] ${{ steps.ctx.outputs.VERSION_NAME_FULL }} (${{ steps.ctx.outputs.BUILD_NUMBER }})"
+          release-notes-file: ${{ steps.notes.outputs.short }}
+          mapping-file: ${{ steps.build.outputs.MAPPING_PATH }}
+          working-directory: ${{ inputs.app-directory }}
+
+      - name: Distribute to Firebase App Distribution
+        id: firebase
+        if: ${{ !inputs.dry-run && steps.ctx.outputs.FIREBASE_ENABLED == 'true' }}
+        uses: ./.flutter-ci/actions/distribute-firebase
+        with:
+          service-account-json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          app-id: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          file: ${{ steps.build.outputs.APK_PATH || steps.build.outputs.AAB_PATH }}
+          groups: ${{ steps.ctx.outputs.FIREBASE_GROUPS }}
+          testers: ${{ steps.ctx.outputs.FIREBASE_TESTERS }}
+          release-notes-file: ${{ steps.notes.outputs.short }}
+          working-directory: ${{ inputs.app-directory }}
+
+      - name: Distribute to Google Drive
+        id: drive
+        if: ${{ !inputs.dry-run && steps.ctx.outputs.DRIVE_ENABLED == 'true' }}
+        uses: ./.flutter-ci/actions/distribute-drive
+        with:
+          service-account-json: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          folder-id: ${{ steps.ctx.outputs.DRIVE_FOLDER_ID }}
+          files: |
+            ${{ steps.build.outputs.APK_PATH }}
+            ${{ steps.build.outputs.AAB_PATH }}
+          working-directory: ${{ inputs.app-directory }}
+
+      - name: Create GitHub Release
+        id: release
+        if: ${{ !inputs.dry-run && steps.ctx.outputs.GITHUB_RELEASE == 'true' }}
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          tag_name: ${{ steps.ctx.outputs.TAG }}
+          name: "[${{ steps.ctx.outputs.ENV_LABEL }}] ${{ steps.ctx.outputs.TAG }}"
+          body_path: ${{ steps.notes.outputs.long }}
+          prerelease: ${{ steps.ctx.outputs.IS_PRERELEASE == 'true' }}
+          make_latest: ${{ steps.ctx.outputs.IS_PRERELEASE == 'true' && 'false' || 'true' }}
+          files: ${{ steps.ctx.outputs.GITHUB_RELEASE_ATTACH == 'true' && format('{0}/{1}/*', inputs.app-directory, steps.build.outputs.ARTIFACTS_DIR) || '' }}
+
+      - name: Remove signing files
+        if: always()
+        uses: ./.flutter-ci/actions/android-signing
+        with:
+          mode: cleanup
+          working-directory: ${{ inputs.app-directory }}
+
+      - name: Summary and notification
+        if: always() && hashFiles('.flutter-ci/actions/notify/action.yml') != ''
+        uses: ./.flutter-ci/actions/notify
+        with:
+          status: ${{ job.status }}
+          context-json: ${{ toJSON(steps.ctx.outputs) }}
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          destinations: |
+            ${{ steps.play.outcome && format('Google Play ({0})|{1}|', steps.ctx.outputs.PLAYSTORE_TRACK, steps.play.outcome) || '' }}
+            ${{ steps.firebase.outcome && format('Firebase App Distribution|{0}|{1}', steps.firebase.outcome, steps.firebase.outputs.link) || '' }}
+            ${{ steps.drive.outcome && format('Google Drive|{0}|{1}', steps.drive.outcome, steps.drive.outputs.link) || '' }}
+            ${{ steps.release.outcome && format('GitHub Release|{0}|{1}', steps.release.outcome, steps.release.outputs.url) || '' }}

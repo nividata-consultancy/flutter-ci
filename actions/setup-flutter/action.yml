@@ -1,0 +1,38 @@
+name: flutter-ci / setup-flutter
+description: Set up Java (with Gradle cache) and Flutter at the app's pinned version (with cache), then run `flutter pub get`.
+inputs:
+  flutter-version:
+    description: Exact Flutter version, e.g. 3.24.5
+    required: true
+  flutter-channel:
+    description: Channel of that version (stable or beta)
+    default: stable
+  java-version:
+    description: Java major version for Gradle
+    default: "17"
+  working-directory:
+    description: App root
+    default: .
+runs:
+  using: composite
+  steps:
+    - name: Set up Java ${{ inputs.java-version }}
+      uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+        cache: gradle
+
+    - name: Set up Flutter ${{ inputs.flutter-version }}
+      uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: ${{ inputs.flutter-channel }}
+        cache: true
+
+    - name: flutter pub get
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        flutter --version
+        flutter pub get

@@ -1,0 +1,33 @@
+name: flutter-ci / notify
+description: Write the job summary and send an optional Slack notification. Never fails.
+inputs:
+  status:
+    description: job.status
+    required: true
+  context-json:
+    description: JSON object of the resolved build context (steps.ctx.outputs)
+    required: true
+  destinations:
+    description: 'Newline list of "name|result|link"'
+    default: ""
+  slack-webhook-url:
+    description: SLACK_WEBHOOK_URL (optional)
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Summary and notification
+      shell: bash
+      env:
+        STATUS: ${{ inputs.status }}
+        ENVIRONMENT: ${{ fromJSON(inputs.context-json).ENVIRONMENT }}
+        ENV_LABEL: ${{ fromJSON(inputs.context-json).ENV_LABEL }}
+        TAG: ${{ fromJSON(inputs.context-json).TAG }}
+        VERSION_NAME_FULL: ${{ fromJSON(inputs.context-json).VERSION_NAME_FULL }}
+        BUILD_NUMBER: ${{ fromJSON(inputs.context-json).BUILD_NUMBER }}
+        DRY_RUN: ${{ fromJSON(inputs.context-json).DRY_RUN }}
+        APP_NAME: ${{ fromJSON(inputs.context-json).APP_NAME }}
+        DESTINATIONS: ${{ inputs.destinations }}
+        SLACK_WEBHOOK_URL: ${{ inputs.slack-webhook-url }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: '"$GITHUB_ACTION_PATH/../../scripts/android/summary.sh" || true'

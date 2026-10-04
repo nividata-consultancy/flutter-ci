@@ -1,0 +1,32 @@
+# Config used by flutter-ci's self-test (dry-run builds only).
+version: 1
+app:
+  name: FlutterCIExample
+  flutter_version_file: .fvmrc
+  java_version: "17"
+  prod_branches: [main]
+  build_number_offset: 0
+  run_tests: true
+  run_analyze: true
+  obfuscate: true
+  android_package_name: com.example.flutter_ci_example
+
+environments:
+  uat:
+    dart_define_file: env/uat.json
+    android:
+      artifacts: [aab, apk]
+      destinations:
+        playstore: { track: internal }
+    ios:
+      display_name: "Example UAT"
+      app_icon: AppIcon-UAT
+  prod:
+    dart_define_file: env/prod.json
+    android:
+      artifacts: [aab]
+      destinations:
+        playstore: { track: internal }
+    ios:
+      display_name: "Example"
+      app_icon: AppIcon

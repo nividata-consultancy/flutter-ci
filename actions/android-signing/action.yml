@@ -1,0 +1,48 @@
+name: flutter-ci / android-signing
+description: >
+  Write the upload keystore (outside the repo) and android/key.properties from
+  secrets, or remove them again with `mode: cleanup`. Never prints secrets.
+inputs:
+  mode:
+    description: write | cleanup
+    default: write
+  working-directory:
+    description: App root
+    default: .
+  allow-missing:
+    description: When "true", missing secrets only warn (used for dry runs).
+    default: "false"
+  keystore-base64:
+    description: ANDROID_KEYSTORE_BASE64
+    default: ""
+  keystore-password:
+    description: ANDROID_KEYSTORE_PASSWORD
+    default: ""
+  key-alias:
+    description: ANDROID_KEY_ALIAS
+    default: ""
+  key-password:
+    description: ANDROID_KEY_PASSWORD
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Android signing (${{ inputs.mode }})
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ANDROID_KEYSTORE_BASE64: ${{ inputs.keystore-base64 }}
+        ANDROID_KEYSTORE_PASSWORD: ${{ inputs.keystore-password }}
+        ANDROID_KEY_ALIAS: ${{ inputs.key-alias }}
+        ANDROID_KEY_PASSWORD: ${{ inputs.key-password }}
+        MODE: ${{ inputs.mode }}
+        ALLOW_MISSING: ${{ inputs.allow-missing }}
+        SCRIPT: ${{ github.action_path }}/../../scripts/android/signing.sh
+      run: |
+        if [[ "$MODE" == "cleanup" ]]; then
+          "$SCRIPT" cleanup
+        elif [[ "$ALLOW_MISSING" == "true" ]]; then
+          "$SCRIPT" write --allow-missing
+        else
+          "$SCRIPT" write
+        fi

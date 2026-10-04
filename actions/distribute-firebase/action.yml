@@ -1,0 +1,46 @@
+name: flutter-ci / distribute-firebase
+description: Upload an APK (or AAB) to Firebase App Distribution with a service account.
+inputs:
+  service-account-json:
+    description: FIREBASE_SERVICE_ACCOUNT_JSON (plain JSON)
+    required: true
+  app-id:
+    description: Firebase Android app ID (1:123:android:abc)
+    required: true
+  file:
+    description: Path to the .apk or .aab
+    required: true
+  groups:
+    description: Comma-separated tester group aliases
+    default: ""
+  testers:
+    description: Comma-separated tester emails
+    default: ""
+  release-notes-file:
+    description: Release notes file
+    default: ""
+  working-directory:
+    description: App root
+    default: .
+outputs:
+  link:
+    description: Firebase console link to the release
+    value: ${{ steps.upload.outputs.link }}
+runs:
+  using: composite
+  steps:
+    - name: Upload to Firebase App Distribution
+      id: upload
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        FIREBASE_SERVICE_ACCOUNT_JSON: ${{ inputs.service-account-json }}
+        APP_ID: ${{ inputs.app-id }}
+        FILE: ${{ inputs.file }}
+        FB_GROUPS: ${{ inputs.groups }}
+        TESTERS: ${{ inputs.testers }}
+        NOTES: ${{ inputs.release-notes-file }}
+        SCRIPT: ${{ github.action_path }}/../../scripts/common/firebase_distribute.sh
+      run: |
+        link="$("$SCRIPT" --file "$FILE" --app "$APP_ID" --groups "$FB_GROUPS" --testers "$TESTERS" --release-notes-file "$NOTES")"
+        echo "link=$link" >>"$GITHUB_OUTPUT"
