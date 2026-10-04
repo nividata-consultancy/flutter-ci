@@ -23,7 +23,7 @@ environments:
       destinations:                   # builds go only where enabled: true
         playstore: { enabled: true,  tracks: [internal] }                # Play internal testing
         firebase:  { enabled: false, groups: "qa-team" }                 # Firebase App Distribution (tag message = release notes)
-        drive:     { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }  # Google Shared Drive folder
+        drive:     { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }  # Google Drive folder ID
     ios:                              # iOS always goes to TestFlight (Xcode Cloud), nowhere else
       display_name: "MyApp UAT"
       app_icon: AppIcon-UAT

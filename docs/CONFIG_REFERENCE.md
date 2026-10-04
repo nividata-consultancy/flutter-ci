@@ -121,7 +121,7 @@ not checked. All destinations are skipped when the workflow runs with `dry-run: 
 | `playstore` → `internal` (or another testing track) | ✓ | ✓ |
 | `playstore` → `production` (always a **draft** release) | — | ✓ |
 | `firebase` (App Distribution) | ✓ | ✓ |
-| `drive` (Shared Drive folder) | ✓ | ✓ |
+| `drive` (Google Drive folder) | ✓ | ✓ |
 
 ```yaml
 destinations:
@@ -134,7 +134,7 @@ destinations:
 |---|---|---|
 | `playstore` | `enabled` (**required**), `tracks` (**required**), `status` (`completed` by default, or `draft` while the app is still a draft in Play Console; applies to the testing track) | Uploads the AAB and `mapping.txt`. Release name: `[UAT] 1.4.0-beta.1 (123)`. No release notes are sent to Play. Internal testers are the email lists set on the internal testing track in Play Console. See [Play tracks](#play-tracks). |
 | `firebase` | `enabled` (**required**), `groups`, `testers` (comma-separated, both optional) | Uploads the APK if one was built, otherwise the AAB (which requires the Firebase project to be linked to Play). **Release notes** are the tag message (see [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#release-notes)). `groups` are Firebase tester group aliases. |
-| `drive` | `enabled` (**required**), `folder_id` (**required** when enabled, a folder inside a **Shared Drive**) | Uploads the APK and AAB. |
+| `drive` | `enabled` (**required**), `folder_id` (**required** when enabled; the ID from the folder URL. Shared Drive or My Drive, see [SECRETS.md](SECRETS.md#google-drive)) | Uploads the APK and AAB. |
 
 ## Play tracks
 

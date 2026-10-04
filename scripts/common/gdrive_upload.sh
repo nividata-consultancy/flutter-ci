@@ -1,11 +1,15 @@
 #!/bin/bash
-# Upload a file to a folder in a Google *Shared Drive* with a service account.
+# Upload a file to a Google Drive folder.
 #
-# Service accounts have no My Drive storage quota, so the folder MUST live in
-# a Shared Drive and the service account must be a member (Content manager).
+# Credentials, first match wins:
+#   A. GDRIVE_OAUTH_CLIENT_ID + GDRIVE_OAUTH_CLIENT_SECRET + GDRIVE_OAUTH_REFRESH_TOKEN
+#      Uploads as a real Google user into their own My Drive (their storage).
+#      Works with personal Gmail accounts.
+#   B. GDRIVE_SERVICE_ACCOUNT_JSON (raw) or GDRIVE_SERVICE_ACCOUNT_JSON_BASE64
+#      A service account has no storage of its own, so the folder MUST be in a
+#      Shared Drive where the service account is a member (Content manager).
 #
 # CLI: gdrive_upload.sh <file> <folder-id> [name]
-# Credentials: GDRIVE_SERVICE_ACCOUNT_JSON (raw) or GDRIVE_SERVICE_ACCOUNT_JSON_BASE64.
 # Prints the file's webViewLink on success. Needs curl, openssl and yq.
 
 _GDRIVE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,13 +23,20 @@ gdrive_upload() {
   [[ -n "$name" ]] || name="$(basename "$file")"
 
   local sa_json tmp sa token
-  sa_json="$(secret_from_env GDRIVE_SERVICE_ACCOUNT_JSON)"
-  [[ -n "$sa_json" ]] || { log_error "Drive: GDRIVE_SERVICE_ACCOUNT_JSON (or _BASE64) is not set." "SECRETS.md#google-drive"; return 1; }
   tmp="$(ci_temp_dir)"
-  sa="$tmp/gdrive-sa.json"
-  printf '%s' "$sa_json" | write_secret_file "$sa"
-  token="$(google_access_token "$sa" https://www.googleapis.com/auth/drive)" || { rm -f "$sa"; return 1; }
-  rm -f "$sa"
+  if [[ -n "${GDRIVE_OAUTH_REFRESH_TOKEN:-}" ]]; then
+    [[ -n "${GDRIVE_OAUTH_CLIENT_ID:-}" && -n "${GDRIVE_OAUTH_CLIENT_SECRET:-}" ]] \
+      || { log_error "Drive: GDRIVE_OAUTH_REFRESH_TOKEN is set, but GDRIVE_OAUTH_CLIENT_ID / GDRIVE_OAUTH_CLIENT_SECRET are missing." "SECRETS.md#option-b-your-own-google-account-my-drive"; return 1; }
+    log_info "Drive: uploading as your Google account (OAuth refresh token)."
+    token="$(google_access_token_from_refresh "$GDRIVE_OAUTH_CLIENT_ID" "$GDRIVE_OAUTH_CLIENT_SECRET" "$GDRIVE_OAUTH_REFRESH_TOKEN")" || return 1
+  else
+    sa_json="$(secret_from_env GDRIVE_SERVICE_ACCOUNT_JSON)"
+    [[ -n "$sa_json" ]] || { log_error "Drive: no credentials. Set GDRIVE_OAUTH_CLIENT_ID + GDRIVE_OAUTH_CLIENT_SECRET + GDRIVE_OAUTH_REFRESH_TOKEN (your own account), or GDRIVE_SERVICE_ACCOUNT_JSON (Shared Drive)." "SECRETS.md#google-drive"; return 1; }
+    sa="$tmp/gdrive-sa.json"
+    printf '%s' "$sa_json" | write_secret_file "$sa"
+    token="$(google_access_token "$sa" https://www.googleapis.com/auth/drive)" || { rm -f "$sa"; return 1; }
+    rm -f "$sa"
+  fi
 
   local meta headers body code location
   meta="$(NAME="$name" FOLDER="$folder" yq -n -o json -I 0 '.name = strenv(NAME) | .parents = [strenv(FOLDER)]')"
@@ -61,10 +72,10 @@ _gdrive_fail() {
   msg="$(yq -p json -oy e '.error.message // ""' "$body" 2>/dev/null || true)"
   case "$reason" in
     storageQuotaExceeded)
-      log_error "Drive: storage quota exceeded. The folder is probably in someone's My Drive; service accounts can only upload into a Shared Drive folder." \
+      log_error "Drive: storage quota exceeded. With a service account the folder must be in a Shared Drive; with your own account (OAuth), your Drive is full." \
         "TROUBLESHOOTING.md#drive-storage-quota-exceeded" ;;
     notFound)
-      log_error "Drive: folder not found. Add the service account as a member (Content manager) of the Shared Drive and check folder_id." \
+      log_error "Drive: folder not found. Check folder_id, and that the account used for uploads can edit that folder." \
         "SECRETS.md#google-drive" ;;
     *)
       log_error "Drive: upload failed (HTTP $code${reason:+, $reason}): ${msg:-see log}" "TROUBLESHOOTING.md#drive-storage-quota-exceeded" ;;

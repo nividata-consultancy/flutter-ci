@@ -70,7 +70,16 @@ on:
         description: Firebase Android app ID (firebase destination).
         required: false
       GDRIVE_SERVICE_ACCOUNT_JSON:
-        description: Google Drive service account JSON (drive destination).
+        description: Google Drive service account JSON (drive destination, Shared Drive folder).
+        required: false
+      GDRIVE_OAUTH_CLIENT_ID:
+        description: Google OAuth client ID (drive destination, upload as your own account).
+        required: false
+      GDRIVE_OAUTH_CLIENT_SECRET:
+        description: Google OAuth client secret (drive destination, upload as your own account).
+        required: false
+      GDRIVE_OAUTH_REFRESH_TOKEN:
+        description: Google OAuth refresh token (drive destination, upload as your own account).
         required: false
       DART_DEFINES_UAT_JSON:
         description: UAT dart defines JSON, when env/uat.json is not committed.
@@ -275,6 +284,9 @@ jobs:
         uses: ./.flutter-ci/actions/distribute-drive
         with:
           service-account-json: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          oauth-client-id: ${{ secrets.GDRIVE_OAUTH_CLIENT_ID }}
+          oauth-client-secret: ${{ secrets.GDRIVE_OAUTH_CLIENT_SECRET }}
+          oauth-refresh-token: ${{ secrets.GDRIVE_OAUTH_REFRESH_TOKEN }}
           folder-id: ${{ steps.ctx.outputs.DRIVE_FOLDER_ID }}
           files: |
             ${{ steps.build.outputs.APK_PATH }}

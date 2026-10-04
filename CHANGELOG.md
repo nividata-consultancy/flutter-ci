@@ -6,6 +6,14 @@ in [docs/MAINTAINING.md](docs/MAINTAINING.md#migrations).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-04
+
+### Added
+- Google Drive uploads as your own Google account (OAuth refresh token):
+  new optional secrets `GDRIVE_OAUTH_CLIENT_ID`, `GDRIVE_OAUTH_CLIENT_SECRET`,
+  `GDRIVE_OAUTH_REFRESH_TOKEN`. Works with any My Drive folder, no Shared Drive
+  or Google Workspace needed. The service account method is unchanged.
+
 ## [1.0.0] - 2026-10-04
 
 ### Added

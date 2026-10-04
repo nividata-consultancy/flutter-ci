@@ -22,7 +22,8 @@ which ones the configured destinations need, with a clear error if one is missin
 | `PLAY_SERVICE_ACCOUNT_JSON` | `playstore` destination | service account JSON, plain |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | `firebase` destination | service account JSON, plain |
 | `FIREBASE_ANDROID_APP_ID` | `firebase` destination | `1:1234567890:android:abc123…` |
-| `GDRIVE_SERVICE_ACCOUNT_JSON` | `drive` destination | service account JSON, plain |
+| `GDRIVE_SERVICE_ACCOUNT_JSON` | `drive` destination, Option A (Shared Drive) | service account JSON, plain |
+| `GDRIVE_OAUTH_CLIENT_ID` / `GDRIVE_OAUTH_CLIENT_SECRET` / `GDRIVE_OAUTH_REFRESH_TOKEN` | `drive` destination, Option B (your own My Drive) | text |
 | `DART_DEFINES_UAT_JSON` | UAT dart defines not committed | JSON, plain |
 | `DART_DEFINES_PROD_JSON` | prod dart defines not committed | JSON, plain |
 | `SLACK_WEBHOOK_URL` | optional | `https://hooks.slack.com/services/…` |
@@ -95,11 +96,22 @@ in the environment to pin it.
 
 ## Google Drive
 
-Android only.
+Android only. There are two ways to give CI access to a Drive folder. Pick one.
 
-Service accounts **have no My Drive storage quota**. Uploads into a folder that
-lives in someone's My Drive fail with `storageQuotaExceeded`, even if the folder
-is shared with the service account. Use a **Shared Drive**:
+| | Option A: service account | Option B: your own Google account |
+|---|---|---|
+| Folder | Must be in a **Shared Drive** | Any folder in **your My Drive** |
+| Needs | Google Workspace (company account) | Any Google account, including free Gmail |
+| Storage used | The Shared Drive's | Your account's |
+| Secrets | `GDRIVE_SERVICE_ACCOUNT_JSON` | `GDRIVE_OAUTH_CLIENT_ID`, `GDRIVE_OAUTH_CLIENT_SECRET`, `GDRIVE_OAUTH_REFRESH_TOKEN` |
+
+If the three `GDRIVE_OAUTH_*` secrets are set, Option B is used. Otherwise Option A is used.
+
+### Option A: service account (Shared Drive)
+
+Service accounts **have no storage of their own**. Uploads into a folder in
+someone's My Drive fail with `storageQuotaExceeded`, even if the folder is
+shared with the service account.
 
 1. Google Cloud Console → create a service account → JSON key. Enable the
    **Google Drive API** for the project.
@@ -111,8 +123,44 @@ is shared with the service account. Use a **Shared Drive**:
    `destinations.drive.folder_id`.
 4. GitHub: `gh secret set GDRIVE_SERVICE_ACCOUNT_JSON < drive-sa.json`.
 
-Uploads use the Drive v3 API directly with `supportsAllDrives=true`. They need only
-`curl`, `openssl` and `yq`.
+### Option B: your own Google account (My Drive)
+
+CI uploads **as you**, using a refresh token you create once in the browser.
+
+1. **Cloud project:** https://console.cloud.google.com → create or pick a project →
+   **APIs & Services → Library → Google Drive API → Enable**.
+2. **Consent screen:** **APIs & Services → OAuth consent screen** (also called
+   *Google Auth Platform*):
+   - Get started → App name `flutter-ci uploads`, your email → **Audience: External** → create.
+   - **Audience → Publish app** so the status is **In production**. In "Testing"
+     status, Google expires refresh tokens after 7 days. Verification is **not** needed
+     for your own use; you just see a "Google hasn't verified this app" warning once.
+3. **OAuth client:** **APIs & Services → Credentials → Create credentials → OAuth
+   client ID** → type **Web application** → under **Authorized redirect URIs** add
+   `https://developers.google.com/oauthplayground` → **Create**. Copy the
+   **Client ID** and **Client secret**.
+4. **Get the refresh token:** open https://developers.google.com/oauthplayground
+   - ⚙️ (top right) → tick **Use your own OAuth credentials** → paste the client ID and secret.
+   - Left side, in **"Input your own scopes"**, type `https://www.googleapis.com/auth/drive` → **Authorize APIs**.
+   - Sign in with the Google account whose Drive should receive the builds. On
+     "Google hasn't verified this app", click **Advanced → Go to flutter-ci uploads (unsafe)** → **Continue / Allow**.
+   - Click **Exchange authorization code for tokens**. Copy the **Refresh token**.
+5. **Folder:** in that account's Drive, create a folder (e.g. `App Builds/MyApp UAT`)
+   and open it. Copy the ID from the URL (`.../folders/<FOLDER_ID>`) into
+   `destinations.drive.folder_id`.
+6. **GitHub secrets** (in the app folder):
+   ```bash
+   gh secret set GDRIVE_OAUTH_CLIENT_ID      # paste the client ID
+   gh secret set GDRIVE_OAUTH_CLIENT_SECRET  # paste the client secret
+   gh secret set GDRIVE_OAUTH_REFRESH_TOKEN  # paste the refresh token
+   ```
+
+The refresh token keeps working until you remove the app's access
+(https://myaccount.google.com/permissions), it goes unused for 6 months, or the
+client secret is deleted. If uploads fail with `invalid_grant`, repeat step 4 and
+update `GDRIVE_OAUTH_REFRESH_TOKEN`. One client and token can be reused for all apps.
+
+Uploads use the Drive v3 API directly. They need only `curl`, `openssl` and `yq`.
 
 ## Dart defines
 

@@ -127,7 +127,7 @@ _cfg_validate_folder_id() {
   _cfg_expect_type "$path" "$label" '!!str' || return
   v="$(cfg "$path")"
   if [[ "$v" == "SHARED_DRIVE_FOLDER_ID" || ! "$v" =~ ^[A-Za-z0-9_-]+$ ]]; then
-    _cfg_err "$label must be the ID of a folder inside a Google Shared Drive (got '$v')"
+    _cfg_err "$label must be a Google Drive folder ID, the part after /folders/ in the folder's URL (got '$v')"
   fi
 }
 

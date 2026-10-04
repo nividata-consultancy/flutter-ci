@@ -1,13 +1,23 @@
 name: flutter-ci / distribute-drive
 description: >
-  Upload files to a folder in a Google Shared Drive with a service account
-  (service accounts have no My Drive quota).
+  Upload files to a Google Drive folder, either as your own Google account
+  (OAuth refresh token, My Drive) or with a service account (Shared Drive only,
+  because service accounts have no storage of their own).
 inputs:
   service-account-json:
-    description: GDRIVE_SERVICE_ACCOUNT_JSON (plain JSON)
-    required: true
+    description: GDRIVE_SERVICE_ACCOUNT_JSON (plain JSON); Shared Drive folders only
+    default: ""
+  oauth-client-id:
+    description: GDRIVE_OAUTH_CLIENT_ID (upload as your own account)
+    default: ""
+  oauth-client-secret:
+    description: GDRIVE_OAUTH_CLIENT_SECRET
+    default: ""
+  oauth-refresh-token:
+    description: GDRIVE_OAUTH_REFRESH_TOKEN
+    default: ""
   folder-id:
-    description: ID of a folder inside a Shared Drive
+    description: Google Drive folder ID (from the folder URL)
     required: true
   files:
     description: Newline-separated file paths
@@ -28,6 +38,9 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       env:
         GDRIVE_SERVICE_ACCOUNT_JSON: ${{ inputs.service-account-json }}
+        GDRIVE_OAUTH_CLIENT_ID: ${{ inputs.oauth-client-id }}
+        GDRIVE_OAUTH_CLIENT_SECRET: ${{ inputs.oauth-client-secret }}
+        GDRIVE_OAUTH_REFRESH_TOKEN: ${{ inputs.oauth-refresh-token }}
         FOLDER_ID: ${{ inputs.folder-id }}
         FILES: ${{ inputs.files }}
         SCRIPT: ${{ github.action_path }}/../../scripts/common/gdrive_upload.sh

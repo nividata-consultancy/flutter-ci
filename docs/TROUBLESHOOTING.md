@@ -82,12 +82,20 @@ git checkout main && git pull && git tag v1.4.0 && git push origin v1.4.0
 
 ## Drive: storage quota exceeded
 
-`Drive: storage quota exceeded` / `storageQuotaExceeded` / `notFound`.
+`Drive: storage quota exceeded` / `storageQuotaExceeded` / `notFound` / `invalid_grant`.
 
-Service accounts have no My Drive storage. The folder must be **inside a Shared
-Drive**, and the service account must be a member of that Shared Drive (Content
-manager). A My Drive folder shared with the service account is **not** enough.
-See [SECRETS.md](SECRETS.md#google-drive).
+- **Service account (`GDRIVE_SERVICE_ACCOUNT_JSON`):** service accounts have no
+  storage of their own. The folder must be **inside a Shared Drive**, and the
+  service account must be a member of it (Content manager). A My Drive folder
+  shared with the service account is **not** enough. If you have no Shared Drive,
+  use your own account instead (Option B).
+- **Your own account (`GDRIVE_OAUTH_*`):** `storageQuotaExceeded` means that
+  account's Drive is full. `notFound` means the folder ID is wrong, or the folder
+  belongs to another account that hasn't given you edit access. `invalid_grant`
+  means the refresh token expired or was revoked (or the consent screen is still
+  in "Testing", where tokens last 7 days). Create a new one.
+
+See [SECRETS.md](SECRETS.md#google-drive) for both options.
 
 ## First Play upload
 

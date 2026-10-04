@@ -3,6 +3,8 @@
 # curl, openssl and yq. Shared by the Drive upload and the Play API calls.
 #
 # Lib: google_access_token <service-account.json> <scope>   prints the token
+#      google_access_token_from_refresh <client-id> <client-secret> <refresh-token>
+#        (a real user's OAuth token: uploads use that user's own Drive storage)
 
 _GOOGLE_AUTH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/common/util.sh
@@ -33,6 +35,23 @@ google_access_token() {
   token="$(printf '%s' "$resp" | yq -p json -oy e '.access_token // ""' -)"
   if [[ -z "$token" ]]; then
     log_error "Could not get a Google access token: $(printf '%s' "$resp" | yq -p json -oy e '.error_description // .error // "unknown error"' -)" "SECRETS.md"
+    return 1
+  fi
+  mask "$token"
+  printf '%s' "$token"
+}
+
+google_access_token_from_refresh() {
+  local client_id="$1" client_secret="$2" refresh_token="$3" resp token
+  resp="$(curl -sS -X POST https://oauth2.googleapis.com/token \
+    --data-urlencode "client_id=$client_id" \
+    --data-urlencode "client_secret=$client_secret" \
+    --data-urlencode "refresh_token=$refresh_token" \
+    --data-urlencode 'grant_type=refresh_token')" || { log_error "Google token request failed."; return 1; }
+  token="$(printf '%s' "$resp" | yq -p json -oy e '.access_token // ""' -)"
+  if [[ -z "$token" ]]; then
+    log_error "Could not get a Google access token from the refresh token: $(printf '%s' "$resp" | yq -p json -oy e '.error_description // .error // "unknown error"' -). If it says 'invalid_grant', create a new refresh token." \
+      "SECRETS.md#option-b-your-own-google-account-my-drive"
     return 1
   fi
   mask "$token"
