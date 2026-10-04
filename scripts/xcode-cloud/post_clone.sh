@@ -87,6 +87,11 @@ main() {
   log_step "Resolving build context for $CI_TAG"
   resolve_context . "$CONFIG_PATH" "$CI_TAG" ios || exit 1
   [[ "$CONFIG_PATH" == /* ]] || CONFIG_PATH="$APP_ROOT/$CONFIG_PATH"
+  if [[ "$IOS_ENABLED" != "true" ]]; then
+    trap - EXIT
+    die "iOS is disabled for '$ENVIRONMENT' (environments.$ENVIRONMENT.ios.enabled: false in .ci/config.yaml), so this build stops here on purpose. Nothing is built or sent to TestFlight. Xcode Cloud cannot skip a tag build, which is why it shows as failed." \
+      "CONFIG_REFERENCE.md#platform-switches"
+  fi
   local build_number="${CI_BUILD_NUMBER:?CI_BUILD_NUMBER is not set}"
   local commit="${CI_COMMIT:-$(git rev-parse HEAD)}"
   log_info "[$ENV_LABEL] $TAG → version $VERSION_NAME ($build_number), Flutter $FLUTTER_VERSION"

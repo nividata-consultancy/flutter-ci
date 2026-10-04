@@ -155,8 +155,18 @@ jobs:
           DRY_RUN: ${{ inputs.dry-run }}
         run: '"$FLUTTER_CI/scripts/android/resolve.sh"'
 
+      - name: Android disabled for this environment
+        if: steps.ctx.outputs.ANDROID_ENABLED == 'false'
+        env:
+          ENVIRONMENT: ${{ steps.ctx.outputs.ENVIRONMENT }}
+          TAG: ${{ steps.ctx.outputs.TAG }}
+        run: |
+          msg="Android is disabled for '$ENVIRONMENT' (environments.$ENVIRONMENT.android.enabled: false in .ci/config.yaml). Nothing was built for $TAG."
+          echo "::notice::$msg"
+          echo "### ⏭️ $msg" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Prod guard (only when app.prod_branches is set)
-        if: steps.ctx.outputs.ENVIRONMENT == 'prod' && steps.ctx.outputs.PROD_BRANCHES != ''
+        if: ${{ steps.ctx.outputs.ANDROID_ENABLED == 'true' && steps.ctx.outputs.ENVIRONMENT == 'prod' && steps.ctx.outputs.PROD_BRANCHES != '' }}
         env:
           PROD_BRANCHES: ${{ steps.ctx.outputs.PROD_BRANCHES }}
         run: |
@@ -164,6 +174,7 @@ jobs:
           "$FLUTTER_CI/scripts/common/prod_guard.sh" "$GITHUB_SHA" $PROD_BRANCHES
 
       - name: Set up Java and Flutter
+        if: steps.ctx.outputs.ANDROID_ENABLED == 'true'
         uses: ./.flutter-ci/actions/setup-flutter
         with:
           flutter-version: ${{ steps.ctx.outputs.FLUTTER_VERSION }}
@@ -172,7 +183,7 @@ jobs:
           working-directory: ${{ inputs.app-directory }}
 
       - name: Tests
-        if: steps.ctx.outputs.RUN_TESTS == 'true'
+        if: ${{ steps.ctx.outputs.ANDROID_ENABLED == 'true' && steps.ctx.outputs.RUN_TESTS == 'true' }}
         run: |
           if [[ -d test ]]; then
             flutter test
@@ -181,11 +192,12 @@ jobs:
           fi
 
       - name: Analyze
-        if: steps.ctx.outputs.RUN_ANALYZE == 'true'
+        if: ${{ steps.ctx.outputs.ANDROID_ENABLED == 'true' && steps.ctx.outputs.RUN_ANALYZE == 'true' }}
         run: flutter analyze
 
       - name: Resolve dart defines
         id: defines
+        if: steps.ctx.outputs.ANDROID_ENABLED == 'true'
         env:
           DART_DEFINES_UAT_JSON: ${{ steps.ctx.outputs.ENVIRONMENT == 'uat' && secrets.DART_DEFINES_UAT_JSON || '' }}
           DART_DEFINES_PROD_JSON: ${{ steps.ctx.outputs.ENVIRONMENT == 'prod' && secrets.DART_DEFINES_PROD_JSON || '' }}
@@ -196,6 +208,7 @@ jobs:
           echo "path=$path" >> "$GITHUB_OUTPUT"
 
       - name: Write signing config
+        if: steps.ctx.outputs.ANDROID_ENABLED == 'true'
         uses: ./.flutter-ci/actions/android-signing
         with:
           mode: write
@@ -208,6 +221,7 @@ jobs:
 
       - name: Build
         id: build
+        if: steps.ctx.outputs.ANDROID_ENABLED == 'true'
         env:
           ARTIFACTS: ${{ steps.ctx.outputs.ANDROID_ARTIFACTS }}
           FLAVOR: ${{ steps.ctx.outputs.ANDROID_FLAVOR }}
@@ -221,6 +235,7 @@ jobs:
         run: '"$FLUTTER_CI/scripts/android/build.sh"'
 
       - name: Upload build artifacts
+        if: steps.ctx.outputs.ANDROID_ENABLED == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ steps.build.outputs.ARTIFACT_BASENAME }}
@@ -229,6 +244,7 @@ jobs:
 
       - name: Release notes for Firebase (tag message, else commits)
         id: notes
+        if: steps.ctx.outputs.ANDROID_ENABLED == 'true'
         env:
           TAG: ${{ steps.ctx.outputs.TAG }}
           GH_TOKEN: ${{ github.token }}
@@ -251,7 +267,7 @@ jobs:
 
       - name: Distribute to Google Play
         id: play
-        if: ${{ !inputs.dry-run && steps.ctx.outputs.PLAYSTORE_ENABLED == 'true' }}
+        if: ${{ steps.ctx.outputs.ANDROID_ENABLED == 'true' && !inputs.dry-run && steps.ctx.outputs.PLAYSTORE_ENABLED == 'true' }}
         uses: ./.flutter-ci/actions/distribute-playstore
         with:
           service-account-json: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
@@ -267,7 +283,7 @@ jobs:
 
       - name: Distribute to Firebase App Distribution
         id: firebase
-        if: ${{ !inputs.dry-run && steps.ctx.outputs.FIREBASE_ENABLED == 'true' }}
+        if: ${{ steps.ctx.outputs.ANDROID_ENABLED == 'true' && !inputs.dry-run && steps.ctx.outputs.FIREBASE_ENABLED == 'true' }}
         uses: ./.flutter-ci/actions/distribute-firebase
         with:
           service-account-json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
@@ -280,7 +296,7 @@ jobs:
 
       - name: Distribute to Google Drive
         id: drive
-        if: ${{ !inputs.dry-run && steps.ctx.outputs.DRIVE_ENABLED == 'true' }}
+        if: ${{ steps.ctx.outputs.ANDROID_ENABLED == 'true' && !inputs.dry-run && steps.ctx.outputs.DRIVE_ENABLED == 'true' }}
         uses: ./.flutter-ci/actions/distribute-drive
         with:
           service-account-json: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
@@ -295,7 +311,7 @@ jobs:
 
       - name: Create GitHub Release
         id: release
-        if: ${{ !inputs.dry-run && steps.ctx.outputs.GITHUB_RELEASE == 'true' }}
+        if: ${{ steps.ctx.outputs.ANDROID_ENABLED == 'true' && !inputs.dry-run && steps.ctx.outputs.GITHUB_RELEASE == 'true' }}
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: ${{ steps.ctx.outputs.TAG }}
@@ -313,7 +329,7 @@ jobs:
           working-directory: ${{ inputs.app-directory }}
 
       - name: Summary and notification
-        if: always() && hashFiles('.flutter-ci/actions/notify/action.yml') != ''
+        if: always() && steps.ctx.outputs.ANDROID_ENABLED != 'false' && hashFiles('.flutter-ci/actions/notify/action.yml') != ''
         uses: ./.flutter-ci/actions/notify
         with:
           status: ${{ job.status }}

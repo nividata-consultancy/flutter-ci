@@ -117,7 +117,7 @@ set_yq() { yq -i e "$1" "$CFG"; }
   set_yq '.environments.uat.android.destinations.drive.folder_id = "SHARED_DRIVE_FOLDER_ID"'
   run "$SCRIPTS/read_config.sh" validate "$CFG"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"Shared Drive"* ]]
+  [[ "$output" == *"must be a Google Drive folder ID"* ]]
 }
 
 @test "ios destinations are refused (TestFlight only)" {

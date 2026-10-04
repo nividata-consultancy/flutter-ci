@@ -134,7 +134,8 @@ _cfg_validate_folder_id() {
 _cfg_validate_android() {
   local env="$1" p=".environments.$1.android" label="environments.$1.android"
   _cfg_expect_type "$p" "$label" '!!map' || return 0
-  _cfg_known_keys "$p" "$label" flavor target artifacts destinations
+  _cfg_known_keys "$p" "$label" enabled flavor target artifacts destinations
+  _cfg_expect_type "$p.enabled" "$label.enabled" '!!bool' || true
 
   if _cfg_expect_type "$p.flavor" "$label.flavor" '!!str'; then
     [[ "$(cfg "$p.flavor")" =~ ^[A-Za-z][A-Za-z0-9_]*$ ]] \
@@ -227,7 +228,8 @@ _cfg_dest_enabled() {
 _cfg_validate_ios() {
   local p=".environments.$1.ios" label="environments.$1.ios"
   _cfg_expect_type "$p" "$label" '!!map' || return 0
-  _cfg_known_keys "$p" "$label" display_name app_icon google_service_info build_settings target destinations
+  _cfg_known_keys "$p" "$label" enabled display_name app_icon google_service_info build_settings target destinations
+  _cfg_expect_type "$p.enabled" "$label.enabled" '!!bool' || true
 
   if _cfg_expect_type "$p.display_name" "$label.display_name" '!!str'; then
     [[ "$(cfg "$p.display_name")" != *"//"* ]] || _cfg_err "$label.display_name must not contain '//' (it starts a comment in .xcconfig files)"

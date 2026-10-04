@@ -17,6 +17,7 @@ environments:
   uat:
     dart_define_file: env/uat.json    # optional; or the DART_DEFINES_UAT_JSON secret
     android:
+      enabled: true                   # false = UAT tags build nothing on Android
       # flavor: uat                   # only if android/app/build.gradle defines productFlavors
       # target: lib/main.dart
       artifacts: [aab, apk]           # aab | apk
@@ -25,6 +26,7 @@ environments:
         firebase:  { enabled: false, groups: "qa-team" }                 # Firebase App Distribution (tag message = release notes)
         drive:     { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }  # Google Drive folder ID
     ios:                              # iOS always goes to TestFlight (Xcode Cloud), nowhere else
+      enabled: true                   # false = UAT tags stop the iOS build at once (shows as failed in Xcode Cloud)
       display_name: "MyApp UAT"
       app_icon: AppIcon-UAT
       # google_service_info: ios/config/uat/GoogleService-Info.plist
@@ -33,6 +35,7 @@ environments:
   prod:
     dart_define_file: env/prod.json
     android:
+      enabled: true
       artifacts: [aab]
       destinations:
         # tracks: [internal] = internal only, [production] = production only (draft),
@@ -41,6 +44,7 @@ environments:
         firebase:  { enabled: false, groups: "qa-team" }
         drive:     { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }
     ios:
+      enabled: true
       display_name: "MyApp"
       app_icon: AppIcon
       # google_service_info: ios/config/prod/GoogleService-Info.plist

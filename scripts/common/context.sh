@@ -72,6 +72,7 @@ resolve_context() {
 
   if [[ "$platform" == "android" ]]; then
     local a="$e.android"
+    _ctx ANDROID_ENABLED "$(cfg "$a.enabled" true)"
     _ctx JAVA_VERSION "$(cfg '.app.java_version' 17)"
     _ctx BUILD_NUMBER_OFFSET "$(cfg '.app.build_number_offset' 0)"
     _ctx ANDROID_PACKAGE_NAME "$(cfg '.app.android_package_name')"
@@ -101,6 +102,7 @@ resolve_context() {
     _ctx GITHUB_RELEASE_ATTACH "$(cfg '.app.github_release.attach_artifacts' false)"
   else
     local i="$e.ios"
+    _ctx IOS_ENABLED "$(cfg "$i.enabled" true)"
     _ctx IOS_DISPLAY_NAME "$(cfg "$i.display_name")"
     _ctx IOS_APP_ICON "$(cfg "$i.app_icon")"
     _ctx IOS_GOOGLE_SERVICE_INFO "$(cfg "$i.google_service_info")"

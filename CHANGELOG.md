@@ -6,6 +6,13 @@ in [docs/MAINTAINING.md](docs/MAINTAINING.md#migrations).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-04
+
+### Added
+- Platform switches `environments.<env>.android.enabled` and
+  `environments.<env>.ios.enabled` (default `true`). Android skips the job (green);
+  iOS stops in `ci_post_clone.sh` before building (shown as failed, nothing sent to TestFlight).
+
 ## [1.1.0] - 2026-10-04
 
 ### Added

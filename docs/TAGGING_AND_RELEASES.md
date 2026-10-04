@@ -64,6 +64,9 @@ Android destinations are switched on and off in `.ci/config.yaml` with
 `enabled: true|false` (see [CONFIG_REFERENCE.md](CONFIG_REFERENCE.md#destinations)).
 To send the next build somewhere else, change the switches, commit, then tag that commit.
 
+To build **only one platform**, set `android.enabled: false` or `ios.enabled: false`
+for that environment (see [CONFIG_REFERENCE.md](CONFIG_REFERENCE.md#platform-switches)).
+
 ## Cutting a UAT build
 
 ```bash

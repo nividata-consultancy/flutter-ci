@@ -69,6 +69,25 @@ for a missing environment fails.
 | `android` | map | See [Android](#android). |
 | `ios` | map | See [iOS](#ios). |
 
+## Platform switches
+
+Each environment can turn a whole platform off, for example when only an Android
+build is needed this time:
+
+```yaml
+environments:
+  uat:
+    android: { enabled: true, ... }
+    ios:     { enabled: false }     # UAT tags: no iOS build
+```
+
+| `enabled` | Android (GitHub Actions) | iOS (Xcode Cloud) |
+|---|---|---|
+| `true` (default) | Normal build | Normal build |
+| `false` | The job ends at once, **green**, with a "disabled" notice. Nothing is built, uploaded or released. | `ci_post_clone.sh` stops before installing anything. The build shows as **failed** after about a minute with the message "iOS is disabled…", and nothing reaches TestFlight. Xcode Cloud can't skip a build that a tag already started. |
+
+To change it, edit the switch, commit, and tag that commit.
+
 ## Dart defines
 
 Order of precedence:
@@ -84,6 +103,7 @@ JSON must be valid.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
+| `enabled` | bool | `true` | `false` skips Android for this environment. See [Platform switches](#platform-switches). |
 | `flavor` | string | none | `--flavor`. Must exist in Gradle `productFlavors`. Leave it out for apps without flavors. |
 | `target` | path | `lib/main.dart` | `--target`. |
 | `artifacts` | list of `aab`, `apk` | `[aab]` | What to build. Play needs `aab`. Firebase prefers `apk`. |
@@ -97,6 +117,7 @@ On Android, `versionName` is the full tag version (`1.4.0-beta.1`).
 
 | Key | Type | Default | Description |
 |---|---|---|---|
+| `enabled` | bool | `true` | `false` stops iOS builds for this environment. See [Platform switches](#platform-switches). |
 | `display_name` | string | from `Release.xcconfig` | Written as `APP_DISPLAY_NAME` to `Environment.xcconfig`. Must not contain `//`. |
 | `app_icon` | string | from `Release.xcconfig` | Written as `ASSETCATALOG_COMPILER_APPICON_NAME` (e.g. `AppIcon-UAT`). |
 | `google_service_info` | path (`.plist`) | none | Copied to `ios/Runner/GoogleService-Info.plist`. |
