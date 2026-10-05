@@ -6,6 +6,17 @@ in [docs/MAINTAINING.md](docs/MAINTAINING.md#migrations).
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-10-05
+
+### Changed
+- All docs rewritten for the current setup (Android destinations and Play tracks,
+  iOS to TestFlight only, platform switches, Drive options, Xcode Cloud steps as
+  they appear in current Xcode). Removed notes about features that no longer exist.
+- `templates/.ci/config.yaml`: safer defaults for a new app (dart defines and the
+  iOS name/icon commented out, Play prod on `[internal]`).
+- Xcode Cloud only warns about `Environment.xcconfig` when the config sets a name,
+  icon or build settings.
+
 ## [1.2.0] - 2026-10-04
 
 ### Added

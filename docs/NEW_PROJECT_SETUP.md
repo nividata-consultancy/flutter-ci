@@ -1,96 +1,117 @@
 # New project setup
 
-A copy-paste checklist that takes a Flutter app to working CI. Work through it
-top to bottom; most steps take a few minutes. When you are done, pushing
-`v0.1.0-beta.1` produces an Android UAT build (Play internal testing, plus
-Firebase/Drive if configured) and an iOS UAT build in TestFlight, and pushing
-`v0.1.0` produces prod builds in both places.
+A step-by-step checklist that takes a Flutter app to working CI. Do the steps in
+order. Paths are relative to your **app repo**. `~/Desktop/Projects/flutter-ci` stands
+for your local copy of this repository; change it if yours is somewhere else.
 
-Paths below are relative to your app repo. `nividata-consultancy/flutter-ci` is this
-repository.
+At the end:
+- pushing `v0.1.0-beta.1` builds UAT (Android goes to the destinations you enabled, iOS to TestFlight);
+- pushing `v0.1.0` builds prod the same way.
+
+You can set up **Android first and iOS later** (or the other way round). Use the
+platform switch in step 2.
 
 ## Before you start
 
-- [ ] The app builds locally with `flutter build appbundle` and `flutter build ipa`.
-- [ ] The app pins its Flutter version in `.fvmrc` (`{"flutter": "3.24.5"}`) or in
-      `pubspec.yaml` (`environment: flutter: "3.24.5"`), as an exact version.
-- [ ] **Google Play:** the app exists in Play Console, and **one AAB has been uploaded
-      manually** (to any testing track). The Play API cannot create an app or do the
-      first upload. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#first-play-upload).
-- [ ] **App Store Connect:** the app record exists (same bundle ID for UAT and prod).
-- [ ] You are an admin of the GitHub repo and have the App Manager or Admin role in App Store Connect.
+- [ ] The app builds locally: `flutter build appbundle` (Android) and `flutter build ipa` (iOS).
+- [ ] The Flutter version is pinned to an **exact** version in `.fvmrc`, e.g.
+      `{"flutter": "3.24.5"}`. To create the file:
+      `flutter --version` (first line), then `echo '{"flutter": "3.24.5"}' > .fvmrc`.
+- [ ] **Google Play** (if you use it): the app exists in Play Console, and **one AAB was
+      uploaded by hand** at some point. Google doesn't allow the very first upload
+      through the API.
+- [ ] **App Store Connect** (for iOS): the app exists, and you have the **Admin** or
+      **App Manager** role.
 
 ## 1. Copy the templates
 
-From a checkout of `flutter-ci` (or download the files from GitHub):
-
 ```bash
-APP=~/src/my-app                     # your app repo
-CI=~/src/flutter-ci                  # a checkout of nividata-consultancy/flutter-ci
+CI=~/Desktop/Projects/flutter-ci
+cd your-app-folder
+git checkout -b setup-flutter-ci
 
-mkdir -p "$APP/.github/workflows" "$APP/.ci" "$APP/ios/ci_scripts"
-cp "$CI/templates/.github/workflows/release.yml"   "$APP/.github/workflows/release.yml"
-cp "$CI/templates/.ci/config.yaml"                 "$APP/.ci/config.yaml"
-cp "$CI/templates/ios/ci_scripts/ci_post_clone.sh"      "$APP/ios/ci_scripts/"
-cp "$CI/templates/ios/ci_scripts/ci_post_xcodebuild.sh" "$APP/ios/ci_scripts/"
-cat "$CI/templates/.gitignore.append" >> "$APP/.gitignore"
+mkdir -p .github/workflows .ci ios/ci_scripts
+cp "$CI/templates/.github/workflows/release.yml"        .github/workflows/release.yml
+cp "$CI/templates/.ci/config.yaml"                      .ci/config.yaml
+cp "$CI/templates/ios/ci_scripts/ci_post_clone.sh"      ios/ci_scripts/
+cp "$CI/templates/ios/ci_scripts/ci_post_xcodebuild.sh" ios/ci_scripts/
+cat "$CI/templates/.gitignore.append" >> .gitignore
 
-cd "$APP"
 chmod +x ios/ci_scripts/*.sh
-git add ios/ci_scripts/*.sh
-git update-index --chmod=+x ios/ci_scripts/ci_post_clone.sh ios/ci_scripts/ci_post_xcodebuild.sh
+git add .github/workflows/release.yml .ci/config.yaml ios/ci_scripts .gitignore
 ```
 
-The execute bit matters. Without it, Xcode Cloud runs the scripts with `zsh`
-and ignores the `#!/bin/bash` line. Check it with `git ls-files -s ios/ci_scripts`,
-where both files must show `100755`.
+Check that the two scripts are **executable in git**:
+```bash
+git ls-files -s ios/ci_scripts
+```
+Both lines must start with `100755`. If not, run:
+`git update-index --chmod=+x ios/ci_scripts/ci_post_clone.sh ios/ci_scripts/ci_post_xcodebuild.sh`.
+Without this, Xcode Cloud runs them with the wrong shell.
 
-`ios/ci_scripts/` must sit next to `Runner.xcworkspace`, which is the default
-Flutter layout.
+If the app already has a `.github/workflows/release.yml`, don't overwrite it: rename
+one of them first.
 
 ## 2. Fill in `.ci/config.yaml`
 
-Edit the copied file. The full schema is in [CONFIG_REFERENCE.md](CONFIG_REFERENCE.md).
+Open `.ci/config.yaml` and change these. Every key is explained in
+[CONFIG_REFERENCE.md](CONFIG_REFERENCE.md).
 
-- `app.name`: a short name used in artifact names and notifications.
-- `app.android_package_name`: your `applicationId`. It is the same for UAT and prod.
-- `app.build_number_offset`: Android `versionCode` = GitHub run number + offset.
-  If the app is already on Play, set the offset above the highest versionCode
-  already uploaded, e.g. `1000`.
-- `environments.uat` / `environments.prod`: dart define files, Android artifacts,
-  and iOS display name and icon.
-- Android destinations: set `enabled: true` on each place builds should go
-  (Play, Firebase, Drive) and `enabled: false` on the others. For Play, `tracks`
-  picks internal testing, production (draft) or both
-  ([CONFIG_REFERENCE.md](CONFIG_REFERENCE.md#play-tracks)).
-- Dart defines: commit `env/uat.json` and `env/prod.json`, **or** keep them out of git and
-  use the `DART_DEFINES_UAT_JSON` / `DART_DEFINES_PROD_JSON` secrets (step 4).
+**`app:`**
+- `name`: a short name without spaces, e.g. `MathRiddle`. It's used in file names.
+- `android_package_name`: your `applicationId`. Find it with `grep applicationId android/app/build.gradle*`.
+- `build_number_offset`: if the app is already on Play, set this **higher than the
+  highest version code** in Play Console → **App bundle explorer** (e.g. `100`).
+  The Android versionCode is the GitHub run number plus this offset.
+- `run_tests`: `false` if the app has no working tests.
 
-Validate the file locally:
+**`environments.uat` and `environments.prod`:**
+- `dart_define_file`: uncomment it if you have `env/uat.json` / `env/prod.json`.
+- `android.enabled` / `ios.enabled`: `false` turns that platform off for that environment.
+- `android.flavor`: only if `android/app/build.gradle*` has `productFlavors`.
+- `android.destinations`: where Android builds go. For the first test, keep only Play
+  `enabled: true` (or only Firebase), and turn the others on later:
+  ```yaml
+        destinations:
+          playstore: { enabled: true,  tracks: [internal] }
+          firebase:  { enabled: false, groups: "qa-team" }
+          drive:     { enabled: false, folder_id: "…" }
+  ```
 
+Check the file, then commit:
 ```bash
-brew install yq   # mikefarah/yq v4
-"$CI/scripts/common/read_config.sh" validate .ci/config.yaml
+~/Desktop/Projects/flutter-ci/scripts/common/read_config.sh validate .ci/config.yaml
+git add .ci/config.yaml && git commit -m "Add flutter-ci"
 ```
+If you get errors, each line names the exact key that's wrong.
 
 ## 3. Android signing in Gradle
 
-CI writes `android/key.properties` (outside git) with `storeFile`,
-`storePassword`, `keyAlias` and `keyPassword`. Your `android/app/build.gradle.kts`
-must read it. This is the standard Flutter setup:
+CI writes `android/key.properties` (not in git) with `storeFile`, `storePassword`,
+`keyAlias` and `keyPassword`. Your Gradle file must read it. Check first:
 
+```bash
+grep -n "key.properties" android/app/build.gradle*
+```
+
+If nothing is found, add this to `android/app/build.gradle.kts`.
+
+At the top:
 ```kotlin
 import java.util.Properties
 import java.io.FileInputStream
-
+```
+Above `android {`:
+```kotlin
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
-
-android {
-    // ...
+```
+Inside `android { }`, replacing the old `buildTypes`. Keep any extra lines your old
+`release { }` block had, e.g. `isMinifyEnabled`:
+```kotlin
     signingConfigs {
         create("release") {
             if (keystorePropertiesFile.exists()) {
@@ -103,148 +124,126 @@ android {
     }
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (keystorePropertiesFile.exists())
+                signingConfigs.getByName("release") else signingConfigs.getByName("debug")
+        }
+    }
+```
+
+For a Groovy `build.gradle`, the same logic is:
+```groovy
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+android {
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
         }
     }
 }
 ```
 
-`example/android/app/build.gradle.kts` in this repo has a working version
-that falls back to debug keys when `key.properties` is missing.
-
-**Flavors (optional):** if you set `environments.<env>.android.flavor`, the
-flavor must exist in `productFlavors`. If you don't set one, the build runs without `--flavor`.
-
-## 4. Add the GitHub secrets
-
-In the app repo, go to **Settings → Secrets and variables → Actions → New repository secret**,
-or use the `gh` CLI. You need at least the four signing secrets plus one secret per destination
-you use. [SECRETS.md](SECRETS.md) shows how to create each one.
+Use the **upload key** that Play expects. Its SHA-1 must match Play Console → **App integrity
+→ Upload key certificate**. Check with:
+`keytool -list -v -keystore upload-keystore.jks -alias YOUR_ALIAS`.
 
 ```bash
-base64 -i upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64
-gh secret set ANDROID_KEYSTORE_PASSWORD
+git add android/app/build.gradle* && git commit -m "Read release signing from key.properties"
+```
+
+## 4. GitHub settings and signing secrets
+
+**4a. Allow the app repo to use flutter-ci.** In the app repo on GitHub, go to
+**Settings → Actions → General**. "Allow all actions and reusable workflows" works.
+If actions are restricted, add `nividata-consultancy/flutter-ci@*` to the allowed list
+(an org admin may need to do this).
+
+**4b. The four signing secrets** (run in the app folder):
+```bash
+base64 -i /path/to/upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64
+gh secret set ANDROID_KEYSTORE_PASSWORD     # asks for the value
 gh secret set ANDROID_KEY_ALIAS
 gh secret set ANDROID_KEY_PASSWORD
-gh secret set PLAY_SERVICE_ACCOUNT_JSON < play-service-account.json
 ```
+You can also add them on the website: **Settings → Secrets and variables → Actions**.
 
-Then delete the lines for unused destinations from `.github/workflows/release.yml`
-(unused lines are harmless).
+## 5. Android destinations
 
-## 5. One-time iOS project setup
+Do only the parts for the destinations you set to `enabled: true` in step 2. Each
+part is explained click by click in [SECRETS.md](SECRETS.md).
 
-flutter-ci always builds the `Runner` scheme and changes the per-environment
-settings through a generated `ios/Flutter/Environment.xcconfig`. Wire it up
-once:
+| Destination | One-time setup | Secrets |
+|---|---|---|
+| **Play internal testing / production draft** | Service account with Play permissions ([SECRETS.md → Google Play](SECRETS.md#google-play)). In Play Console → Internal testing → **Testers**, add an email list and share the "Join on the web" link. | `PLAY_SERVICE_ACCOUNT_JSON` |
+| **Firebase App Distribution** | App Distribution turned on, a tester group (use its **alias** in `groups`), and a service account ([SECRETS.md → Firebase](SECRETS.md#firebase-app-distribution)) | `FIREBASE_SERVICE_ACCOUNT_JSON`, `FIREBASE_ANDROID_APP_ID` |
+| **Google Drive** | Option A, Shared Drive (Google Workspace only), or Option B, your own Google account plus the folder helper ([SECRETS.md → Google Drive](SECRETS.md#google-drive)) | A: `GDRIVE_SERVICE_ACCOUNT_JSON`<br>B: `GDRIVE_OAUTH_CLIENT_ID`, `GDRIVE_OAUTH_CLIENT_SECRET`, `GDRIVE_OAUTH_REFRESH_TOKEN` |
 
-1. **`ios/Flutter/Release.xcconfig`**: add defaults and the optional include
-   (`#include?` does not fail when the file is missing locally):
+`gh secret list` shows which secrets exist. You don't need to edit
+`.github/workflows/release.yml`; it passes every secret, and missing ones are simply empty.
 
-   ```
-   #include "Generated.xcconfig"
-
-   APP_DISPLAY_NAME = MyApp
-   ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
-
-   #include? "Environment.xcconfig"
-   ```
-
-   If you use CocoaPods, keep the Pods include line that is already there
-   (`#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"`).
-
-2. **`ios/Flutter/Debug.xcconfig`**: add the same two defaults (for local runs):
-
-   ```
-   APP_DISPLAY_NAME = MyApp Dev
-   ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
-   ```
-
-3. **Remove the target-level app icon setting.** Xcode's target settings
-   override xcconfig files. Open `ios/Runner.xcworkspace`, select
-   **Runner (target) → Build Settings → All**, search for `App Icon`, select the
-   **Primary App Icon Set Name** row and press **Delete**. The value should
-   then come from the xcconfig (it shows `AppIcon`, no longer bold). Or, from the
-   terminal:
-
-   ```bash
-   sed -i '' '/ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;/d' ios/Runner.xcodeproj/project.pbxproj
-   ```
-
-4. **`ios/Runner/Info.plist`**: use the variable for the display name:
-
-   ```xml
-   <key>CFBundleDisplayName</key>
-   <string>$(APP_DISPLAY_NAME)</string>
-   ```
-
-5. **UAT icon**: in `ios/Runner/Assets.xcassets`, add an app icon set named
-   `AppIcon-UAT`, e.g. the normal icon with a "UAT" banner. To start with a copy:
-   `cp -R ios/Runner/Assets.xcassets/AppIcon.appiconset ios/Runner/Assets.xcassets/AppIcon-UAT.appiconset`.
-
-6. **Firebase (optional):** to use a different `GoogleService-Info.plist` per
-   environment, commit them at the paths you set in `google_service_info`, e.g.
-   `ios/config/uat/GoogleService-Info.plist`. CI copies the right one to
-   `ios/Runner/GoogleService-Info.plist`.
-
-Check the result locally:
-
-```bash
-xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release -showBuildSettings \
-  | grep -E ' (APP_DISPLAY_NAME|ASSETCATALOG_COMPILER_APPICON_NAME) ='
-```
-
-`example/ios` in this repo has this setup done.
-
-## 6. Create the Xcode Cloud workflow
+## 6. iOS: Xcode Cloud
 
 Follow [XCODE_CLOUD_SETUP.md](XCODE_CLOUD_SETUP.md). In short:
-- Start condition: **Tag Changes**, custom tags beginning with `v`.
-- Action: **Archive** of `Runner`, with distribution preparation **TestFlight and App Store** (so `[PROD]` builds can be submitted).
-- Post-action: **TestFlight Internal Testing** to your QA group.
-- Environment variables: `FLUTTER_CI_REF=v1`, plus the dart-define secrets if `env/*.json` is not committed.
+1. Signing team set and the **Runner** scheme shared and committed.
+2. The app repo's `origin` uses the normal GitHub URL (not an SSH alias).
+3. Create the workflow: start on **Tag Changes** (`v…`) → **Archive** of Runner →
+   **TestFlight Internal Testing** to your group. Set the environment variable `FLUTTER_CI_REF=v1`.
 
-## 7. First test build (UAT)
+A different app name or icon for UAT builds is **optional**; see the end of
+XCODE_CLOUD_SETUP.md.
 
-Commit everything and push. Then create an **annotated** tag. Its message
-becomes the Firebase App Distribution release notes:
+## 7. First UAT build
+
+Push your branch, then a tag. The tag message becomes the Firebase release notes.
 
 ```bash
-git tag -a v0.1.0-beta.1 -m "First CI build
-Please check login and the home screen"
+git push -u origin setup-flutter-ci
+git tag -a v0.1.0-beta.1 -m "First CI build"
 git push origin v0.1.0-beta.1
 ```
 
-- **GitHub → Actions → Release**: the run should finish green. The job summary
-  shows the environment, version, versionCode and destinations. The AAB is on
-  Play's internal track as `[UAT] 0.1.0-beta.1 (N)`.
-- **App Store Connect → Xcode Cloud**: the build runs and reaches TestFlight. The
-  app is named "MyApp UAT" and has the UAT icon.
-- **Firebase** (if configured): testers in your group get the build, with the
-  tag message as release notes.
+The version must be **higher than the version already on the stores**. If the store
+has `2.3.0`, use `v2.3.1-beta.1`.
 
-If something fails, the error message links to the right section of
-[TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+| Where | Success looks like |
+|---|---|
+| GitHub → **Actions → Release** | All steps green. The summary lists each destination with `success`. |
+| Play Console → Internal testing | Release `[UAT] 0.1.0-beta.1 (N)` |
+| Firebase → App Distribution | Release `0.1.0-beta.1 (N)` with your tag message |
+| Drive | `MathRiddle-uat-0.1.0-beta.1-N.apk` / `.aab` in the folder |
+| App Store Connect → Xcode Cloud → Builds | Build for `v0.1.0-beta.1`, then in TestFlight after 10–30 minutes |
 
-Tip: to test the Android side without distributing anything, temporarily set
-`dry-run: true` in `.github/workflows/release.yml`.
+If something fails, the error message links to the right part of
+[TROUBLESHOOTING.md](TROUBLESHOOTING.md). Always use a **new tag** for the next try.
 
 ## 8. First prod build
 
-Tag the commit QA approved. Any branch works, unless you set `app.prod_branches`:
-
+Tag the commit that QA approved:
 ```bash
 git tag -a v0.1.0 -m "First release"
 git push origin v0.1.0
 ```
-
-This produces a prod build on Play internal testing, plus a **draft** production
-release if `playstore.tracks` includes `production`, and a prod build in TestFlight. Release
-them manually as described in [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#promoting-to-production).
+To also create a **draft production release** on Play, set
+`playstore: { enabled: true, tracks: [internal, production] }` under `environments.prod`
+first. The service account then also needs the "Release to production" permission.
+How to release builds to users is in [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md#releasing-to-users).
 
 ## Done checklist
 
-- [ ] `v0.1.0-beta.1` gives an Android UAT build at the configured destinations and an iOS UAT build in TestFlight
-- [ ] `v0.1.0` gives prod builds in both places (and a draft production release on Play if enabled)
-- [ ] Firebase testers see your tag message as the release notes
+- [ ] `v…-beta.N` tags build UAT and reach every enabled destination and TestFlight
+- [ ] `v…` tags build prod and reach the same places (plus the Play production draft, if enabled)
+- [ ] Firebase testers see the tag message as release notes
 - [ ] The team knows the rules in [TAGGING_AND_RELEASES.md](TAGGING_AND_RELEASES.md)

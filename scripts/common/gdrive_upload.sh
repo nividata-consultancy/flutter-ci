@@ -5,7 +5,7 @@
 #   A. GDRIVE_OAUTH_CLIENT_ID + GDRIVE_OAUTH_CLIENT_SECRET + GDRIVE_OAUTH_REFRESH_TOKEN
 #      Uploads as a real Google user into their own My Drive (their storage).
 #      Works with personal Gmail accounts.
-#   B. GDRIVE_SERVICE_ACCOUNT_JSON (raw) or GDRIVE_SERVICE_ACCOUNT_JSON_BASE64
+#   B. GDRIVE_SERVICE_ACCOUNT_JSON (the service account JSON)
 #      A service account has no storage of its own, so the folder MUST be in a
 #      Shared Drive where the service account is a member (Content manager).
 #

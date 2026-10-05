@@ -1,221 +1,203 @@
 # Secrets
 
-This repository is public and never holds secrets. Every secret lives in the
-**app repo** (GitHub) or the **Xcode Cloud workflow** (iOS).
+This repository is public and never holds secrets. Every secret lives in the **app repo**
+(GitHub → Settings → Secrets and variables → Actions) or in the **Xcode Cloud workflow**
+(Environment → Environment Variables, marked Secret).
 
-GitHub's `secrets: inherit` only works inside one organization or enterprise.
-Our apps live in different organizations, so the caller workflow
-(`templates/.github/workflows/release.yml`) passes each secret explicitly. The
-reusable workflow marks them all as `required: false` and checks at runtime
-which ones the configured destinations need, with a clear error if one is missing.
+The app's `.github/workflows/release.yml` passes each secret to flutter-ci by name.
+This is needed because apps live in different GitHub organizations, where
+`secrets: inherit` doesn't work. A secret that doesn't exist is simply empty. CI tells
+you which one is missing, but only when an enabled destination needs it.
+
+Set secrets from the app folder with `gh secret set NAME`, which asks for the value, or
+`gh secret set NAME < file`. List them with `gh secret list`.
 
 ## Overview
 
-### GitHub (Android): app repo → Settings → Secrets and variables → Actions
+### GitHub (Android)
 
-| Secret | Needed when | Format |
+| Secret | Needed when |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | always (except dry runs) |
+| `ANDROID_KEYSTORE_PASSWORD` | always (except dry runs) |
+| `ANDROID_KEY_ALIAS` | always (except dry runs) |
+| `ANDROID_KEY_PASSWORD` | always (except dry runs) |
+| `PLAY_SERVICE_ACCOUNT_JSON` | `playstore` enabled |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | `firebase` enabled |
+| `FIREBASE_ANDROID_APP_ID` | `firebase` enabled |
+| `GDRIVE_SERVICE_ACCOUNT_JSON` | `drive` enabled, Option A (Shared Drive) |
+| `GDRIVE_OAUTH_CLIENT_ID`, `GDRIVE_OAUTH_CLIENT_SECRET`, `GDRIVE_OAUTH_REFRESH_TOKEN` | `drive` enabled, Option B (your own Google account) |
+| `DART_DEFINES_UAT_JSON`, `DART_DEFINES_PROD_JSON` | only if `env/uat.json` / `env/prod.json` are not committed |
+| `SLACK_WEBHOOK_URL` | optional |
+
+### Xcode Cloud (iOS)
+
+| Variable | Secret | Needed when |
 |---|---|---|
-| `ANDROID_KEYSTORE_BASE64` | always (except dry-run) | base64 of the upload keystore `.jks` |
-| `ANDROID_KEYSTORE_PASSWORD` | always (except dry-run) | text |
-| `ANDROID_KEY_ALIAS` | always (except dry-run) | text |
-| `ANDROID_KEY_PASSWORD` | always (except dry-run) | text |
-| `PLAY_SERVICE_ACCOUNT_JSON` | `playstore` destination | service account JSON, plain |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | `firebase` destination | service account JSON, plain |
-| `FIREBASE_ANDROID_APP_ID` | `firebase` destination | `1:1234567890:android:abc123…` |
-| `GDRIVE_SERVICE_ACCOUNT_JSON` | `drive` destination, Option A (Shared Drive) | service account JSON, plain |
-| `GDRIVE_OAUTH_CLIENT_ID` / `GDRIVE_OAUTH_CLIENT_SECRET` / `GDRIVE_OAUTH_REFRESH_TOKEN` | `drive` destination, Option B (your own My Drive) | text |
-| `DART_DEFINES_UAT_JSON` | UAT dart defines not committed | JSON, plain |
-| `DART_DEFINES_PROD_JSON` | prod dart defines not committed | JSON, plain |
-| `SLACK_WEBHOOK_URL` | optional | `https://hooks.slack.com/services/…` |
+| `FLUTTER_CI_REF` = `v1` | no | always |
+| `DART_DEFINES_UAT_JSON_BASE64`, `DART_DEFINES_PROD_JSON_BASE64` | yes | only if `env/*.json` are not committed (`base64 -i env/uat.json \| pbcopy`) |
+| `SLACK_WEBHOOK_URL` | yes | optional |
 
-### Xcode Cloud
-
-See [Xcode Cloud](#xcode-cloud) below. Values are **base64** because secret
-environment variables are single-line.
+iOS signing is handled by Xcode Cloud (cloud-managed certificates), so no signing
+secrets are needed.
 
 ## Android signing
 
-Use the **upload key** from Play App Signing, not the app signing key.
+Use the app's **upload key**. Its SHA-1 must match Play Console → **App integrity → Upload
+key certificate**.
 
 ```bash
-# Create one, if the app doesn't have it yet:
-keytool -genkeypair -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 \
-  -validity 10000 -alias upload
+keytool -list -v -keystore upload-keystore.jks -alias YOUR_ALIAS   # check alias, password, SHA-1
 
-# macOS
-base64 -i upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64
-# Linux
-base64 -w0 upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64
-
-gh secret set ANDROID_KEYSTORE_PASSWORD   # prompts for the value
+base64 -i upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64     # macOS
+gh secret set ANDROID_KEYSTORE_PASSWORD
 gh secret set ANDROID_KEY_ALIAS
 gh secret set ANDROID_KEY_PASSWORD
 ```
 
-CI writes the keystore to the runner's temp directory (outside the repo), writes
-`android/key.properties` pointing to it, and deletes both at the end, even when the
-build fails. If `android/key.properties` is committed in git, the build stops.
-Remove it with `git rm --cached android/key.properties` and add it to `.gitignore`.
-Store the keystore and passwords in your password manager too.
+CI writes the keystore to a temp folder outside the repo, writes `android/key.properties`,
+and deletes both at the end, even when the build fails. If `android/key.properties` is
+committed to git, the build stops. Remove it with `git rm --cached android/key.properties`.
+
+Never create a new keystore for an app that is already on Play. Play rejects builds
+signed with a different key.
 
 ## Google Play
 
-1. **Google Cloud Console** → pick or create a project → **IAM & Admin → Service
-   Accounts → Create**. No project roles are needed. Open the account and choose **Keys → Add key →
-   JSON**, then download it.
-2. Enable the **Google Play Android Developer API** for that project.
-3. **Play Console → Users and permissions → Invite new users**. Use the service
-   account email and grant, for this app: *View app information*, *Release apps
-   to testing tracks* and *Manage testing tracks and edit tester lists*. If an app
-   lists `production` in `playstore.tracks`, also grant *Release to production, exclude devices, and
-   use Play App Signing*. CI still only creates a **draft**, which a person releases.
-4. `gh secret set PLAY_SERVICE_ACCOUNT_JSON < play-sa.json`
+1. https://console.cloud.google.com → create or pick a project → **APIs & Services →
+   Library → Google Play Android Developer API → Enable**.
+2. **IAM & Admin → Service Accounts → Create service account** (e.g. `play-uploader`). No
+   roles are needed here → **Done**.
+3. Open it → **Keys → Add key → Create new key → JSON**. A file downloads.
+4. **Play Console → Users and permissions → Invite new users** → the service account email →
+   **App permissions → Add app** → your app → tick:
+   - View app information and download bulk reports
+   - Release apps to testing tracks
+   - Manage testing tracks and edit tester lists
+   - **Release to production, exclude devices, and use Play App Signing**, only if the
+     app uses `tracks: [… production]`. CI still only creates a draft.
+5. `gh secret set PLAY_SERVICE_ACCOUNT_JSON < ~/Downloads/key.json`, then delete the file.
 
-Note that the **first upload of a new app must be done manually** in Play Console. See
-[TROUBLESHOOTING.md](TROUBLESHOOTING.md#first-play-upload).
+New service accounts can take **up to 24 hours** to work. The **first upload** of a new app
+must be done by hand in Play Console.
+
+**Internal testers** are set in Play Console → **Testing → Internal testing → Testers**
+(an email list). Share the "Join on the web" link with them once.
 
 ## Firebase App Distribution
 
-Android only (iOS builds go to TestFlight only).
+Android only.
 
-1. Firebase console → Project settings → **Service accounts**, or Google Cloud
-   IAM. Create a service account with the role **Firebase App Distribution
-   Admin**, then create a JSON key.
-2. Find the Android app ID in Project settings → General → Your apps (`1:…:android:…`).
-3. Create tester groups in App Distribution → Testers & Groups. Use the group
-   **alias** in config (`groups: "qa-team"`).
-4. GitHub:
+1. Firebase console → ⚙️ **Project settings → General → Your apps**: an **Android** app with
+   your package name exists (otherwise **Add app → Android**). Copy its **App ID**
+   (`1:1234567890:android:abc…`).
+2. **Run → App Distribution → Get started** (once per project).
+3. **Testers & Groups → Add group** → add testers. Use the group **alias** (shown under its
+   name) in `groups`. Several groups: `groups: "qa-team, client"`.
+4. https://console.cloud.google.com, same project → **IAM & Admin → Service Accounts →
+   Create** → role **Firebase App Distribution Admin** → **Keys → Add key → JSON**.
+5. Secrets:
    ```bash
-   gh secret set FIREBASE_SERVICE_ACCOUNT_JSON < firebase-sa.json
+   gh secret set FIREBASE_SERVICE_ACCOUNT_JSON < ~/Downloads/firebase-key.json
    gh secret set FIREBASE_ANDROID_APP_ID --body "1:1234567890:android:abc123"
    ```
 
-The Firebase CLI is downloaded on demand as the standalone binary from
-`https://firebase.tools/bin/<os>/latest`. Set `FIREBASE_TOOLS_VERSION` (e.g. `14.20.0`)
-in the environment to pin it.
+Testers get an email and install builds with the **App Tester** app. The tag message is
+used as the release notes. The Firebase CLI is downloaded on demand; set
+`FIREBASE_TOOLS_VERSION` (e.g. `14.20.0`) to pin it.
 
 ## Google Drive
 
-Android only. There are two ways to give CI access to a Drive folder. Pick one.
+Android only. There are two ways. Pick one.
 
 | | Option A: service account | Option B: your own Google account |
 |---|---|---|
-| Folder | Must be in a **Shared Drive** | A folder created with the helper in the account's **My Drive** |
-| Needs | Google Workspace (company account) | Any Google account, including free Gmail |
-| Storage used | The Shared Drive's | Your account's |
+| Needs | **Google Workspace** with Shared Drives | any Google account (free Gmail works) |
+| Folder | inside a **Shared Drive** | created with the helper, in that account's My Drive |
 | Secrets | `GDRIVE_SERVICE_ACCOUNT_JSON` | `GDRIVE_OAUTH_CLIENT_ID`, `GDRIVE_OAUTH_CLIENT_SECRET`, `GDRIVE_OAUTH_REFRESH_TOKEN` |
 
-If the three `GDRIVE_OAUTH_*` secrets are set, Option B is used. Otherwise Option A is used.
+If the three `GDRIVE_OAUTH_*` secrets exist, Option B is used.
 
 ### Option A: service account (Shared Drive)
 
-Service accounts **have no storage of their own**. Uploads into a folder in
-someone's My Drive fail with `storageQuotaExceeded`, even if the folder is
-shared with the service account.
+Service accounts have **no storage of their own**, so a My Drive folder fails with
+`storageQuotaExceeded`, even when shared.
 
-1. Google Cloud Console → create a service account → JSON key. Enable the
-   **Google Drive API** for the project.
-2. Google Drive → **Shared drives** → create one (e.g. "App builds"), or use an
-   existing one. **Manage members** → add the service account email as
-   **Content manager**.
-3. Create a folder inside the Shared Drive and open it. The URL is
-   `https://drive.google.com/drive/folders/<FOLDER_ID>`. Put `<FOLDER_ID>` in
-   `destinations.drive.folder_id`.
-4. GitHub: `gh secret set GDRIVE_SERVICE_ACCOUNT_JSON < drive-sa.json`.
+1. Cloud Console → enable **Google Drive API** → create a service account → **JSON key**.
+2. Google Drive → **Shared drives** → create one → **Manage members** → add the service
+   account email as **Content manager**.
+3. Create a folder inside it, open it, and copy the ID from the URL:
+   `drive.google.com/drive/folders/<FOLDER_ID>`.
+4. `gh secret set GDRIVE_SERVICE_ACCOUNT_JSON < drive-key.json`
 
 ### Option B: your own Google account (My Drive)
 
-CI uploads **as a Google account**, using a refresh token you create once.
+CI uploads as a Google account with a refresh token. Two safety rules:
+- Use a **separate Google account just for builds** (e.g. `company.builds@gmail.com`) and
+  share the folder with the team, so nothing depends on one person.
+- Use the limited scope **`drive.file`**. The token can then only touch files CI created,
+  never the rest of the Drive. That's why the folder must be created with the helper (step 5).
 
-Two safety rules:
-- **Use a dedicated Google account for builds** (e.g. a new `yourcompany.builds@gmail.com`),
-  not a person's own account. Builds then don't stop when someone leaves, and the
-  team gets access by sharing the folder.
-- **Use the limited scope `drive.file`.** The token can then only see files and folders
-  that CI created, never anything else in that Drive. That's why the folder is
-  created with a helper command (step 5), not by hand.
+Do steps 1–4 **signed in as the builds account**:
 
-1. **Cloud project:** signed in as the builds account, open https://console.cloud.google.com →
-   create a project (e.g. `flutter-ci-uploads`) → **APIs & Services → Library →
-   Google Drive API → Enable**.
-2. **Consent screen:** **APIs & Services → OAuth consent screen** (also called
-   *Google Auth Platform*):
-   - Get started → App name `flutter-ci uploads`, the builds account's email →
-     **Audience: External** → create.
-   - **Audience → Publish app** so the status is **In production**. In "Testing"
-     status Google expires refresh tokens after 7 days. `drive.file` is a
-     non-sensitive scope, so no Google verification is needed.
-3. **OAuth client:** **APIs & Services → Credentials → Create credentials → OAuth
-   client ID** → type **Web application** → under **Authorized redirect URIs** add
-   `https://developers.google.com/oauthplayground` → **Create**. Copy the
-   **Client ID** and **Client secret**.
-4. **Refresh token:** open https://developers.google.com/oauthplayground
-   - ⚙️ (top right) → tick **Use your own OAuth credentials** → paste the client ID and secret.
-   - Left side, in **"Input your own scopes"**, type
-     `https://www.googleapis.com/auth/drive.file` → **Authorize APIs**.
-   - Sign in with the **builds account** → **Continue / Allow**. If a "Google hasn't
-     verified this app" screen appears, click **Advanced → Go to flutter-ci uploads**.
-   - Click **Exchange authorization code for tokens**. Copy the **Refresh token**.
-5. **Create the build folder** with the helper (from a checkout of flutter-ci). It asks for the
-   three values from steps 3–4, without showing them:
+1. https://console.cloud.google.com → new project (e.g. `flutter-ci-uploads`) → **APIs &
+   Services → Library → Google Drive API → Enable**.
+2. **Google Auth Platform** (also called *OAuth consent screen*):
+   - **Branding:** App name `flutter-ci uploads`, support email and developer contact =
+     the builds account, **App home page** and **Privacy policy link** = your company
+     website pages, **Authorized domains** = your company domain (e.g. `nividata.com`). No logo.
+   - **Audience:** External → **Publish app**, so the status is **In production**.
+     In "Testing", the token stops working after 7 days.
+   - **Data Access → Add or remove scopes:** add `https://www.googleapis.com/auth/drive.file`.
+     It must be listed under **non-sensitive** scopes.
+3. **Credentials → Create credentials → OAuth client ID** → **Web application** →
+   Authorized redirect URI `https://developers.google.com/oauthplayground` → copy the
+   **Client ID** (ends with `.apps.googleusercontent.com`) and the **Client secret**.
+4. https://developers.google.com/oauthplayground → ⚙️ → ✅ **Use your own OAuth
+   credentials** → paste both → in **Input your own scopes** type
+   `https://www.googleapis.com/auth/drive.file` → **Authorize APIs** → sign in with the
+   builds account → Allow → **Exchange authorization code for tokens** → copy the
+   **Refresh token**.
+5. **Create the folder** in the Mac Terminal. It asks for the three values; the client ID
+   is shown, the others stay hidden:
    ```bash
-   ~/path/to/flutter-ci/scripts/tools/gdrive_create_folder.sh "MyApp builds"
+   ~/Desktop/Projects/flutter-ci/scripts/tools/gdrive_create_folder.sh "MyApp builds"
    ```
-   It prints the `folder_id`. Put it in `destinations.drive.folder_id`. To see the builds,
-   open the printed link (signed in as the builds account) and **Share** the folder
-   with yourself and your team. Create one folder per app, or per app and environment.
-6. **GitHub secrets** (in the app folder):
+   It prints a link and the `folder_id` for the config. Open the link (as the builds
+   account) → **Share** with the team. Folders made by hand in Drive don't work with
+   `drive.file`. You can move the created folder anywhere afterwards.
+6. Secrets, in each app that uploads:
    ```bash
-   gh secret set GDRIVE_OAUTH_CLIENT_ID      # paste the client ID
-   gh secret set GDRIVE_OAUTH_CLIENT_SECRET  # paste the client secret
-   gh secret set GDRIVE_OAUTH_REFRESH_TOKEN  # paste the refresh token
+   gh secret set GDRIVE_OAUTH_CLIENT_ID
+   gh secret set GDRIVE_OAUTH_CLIENT_SECRET
+   gh secret set GDRIVE_OAUTH_REFRESH_TOKEN
    ```
-   The app's `.github/workflows/release.yml` must pass these three secrets
-   (they are in the template since v1.1.0).
 
-The same client, token and builds account can be reused for all apps. The token keeps
-working until access is removed (https://myaccount.google.com/permissions on the
-builds account), it goes unused for 6 months, or the client secret is deleted. If
-uploads fail with `invalid_grant`, repeat step 4 and update `GDRIVE_OAUTH_REFRESH_TOKEN`.
-
-Uploads use the Drive v3 API directly. They need only `curl`, `openssl` and `yq`.
+The same client, token and builds account work for all apps; only step 5 is per app.
+The token keeps working until access is removed (builds account →
+https://myaccount.google.com/permissions), it goes unused for 6 months, or the client
+secret is deleted. On `invalid_grant`, repeat step 4.
 
 ## Dart defines
 
-Committing `env/uat.json` / `env/prod.json` is simplest when they hold only
-non-secret config such as API URLs. Anything in dart defines ends up inside the app
-binary, so treat it as public in any case.
+Committing `env/uat.json` / `env/prod.json` is simplest for non-secret settings such as
+API URLs. Everything in dart defines ends up inside the app, so treat it as public in
+any case. Otherwise:
+- GitHub: `gh secret set DART_DEFINES_UAT_JSON < env/uat.json` (and `_PROD_`)
+- Xcode Cloud: `DART_DEFINES_UAT_JSON_BASE64` = output of `base64 -i env/uat.json`
 
-If you don't want them in git:
-- GitHub: `gh secret set DART_DEFINES_UAT_JSON < env/uat.json` (and `_PROD_`).
-- Xcode Cloud: `DART_DEFINES_UAT_JSON_BASE64` = `base64 -i env/uat.json`.
-
-The committed file wins when both exist. When `dart_define_file` is configured
-but neither the file nor the secret exists, the build fails.
+A committed file wins over the secret. If `dart_define_file` is set but neither exists,
+the build fails.
 
 ## Slack
 
-Create an **Incoming Webhook** for the target channel and store its URL as
-`SLACK_WEBHOOK_URL`, both in GitHub and, if you want iOS notifications, in Xcode Cloud.
-Notification failures are logged and never fail a build.
+Create an **Incoming Webhook** for the channel and store the URL as `SLACK_WEBHOOK_URL`, in
+GitHub and/or Xcode Cloud. A failed notification never fails a build.
 
-## Xcode Cloud
+## Rotating keys
 
-Add these in the workflow's **Environment → Environment Variables**, with
-**Secret** checked for anything sensitive. See [XCODE_CLOUD_SETUP.md](XCODE_CLOUD_SETUP.md#environment).
-
-| Variable | Secret | Create with |
-|---|---|---|
-| `FLUTTER_CI_REF` | no | `v1` |
-| `DART_DEFINES_UAT_JSON_BASE64` / `DART_DEFINES_PROD_JSON_BASE64` | yes | `base64 -i env/uat.json \| pbcopy` |
-| `SLACK_WEBHOOK_URL` | yes | Slack |
-
-iOS code signing is managed by Xcode Cloud (cloud-managed certificates), so no
-signing secrets are needed.
-
-## Rotation
-
-- Service account keys: create a new key, update the secret, run a beta build,
-  then delete the old key.
-- Keystore passwords cannot change without re-creating the keystore. To replace
-  a lost or compromised upload key, ask Play support to reset it.
+- Service account keys: create a new key, update the secret, check with a beta tag, then
+  delete the old key.
+- Drive refresh token: repeat Option B step 4 and update `GDRIVE_OAUTH_REFRESH_TOKEN`.
+- A lost or leaked upload keystore can only be replaced through Play Console support
+  ("Request upload key reset").

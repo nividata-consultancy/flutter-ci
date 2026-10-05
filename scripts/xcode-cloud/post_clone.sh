@@ -75,7 +75,7 @@ main() {
   # 1. Tag
   if [[ -z "${CI_TAG:-}" ]]; then
     die "CI_TAG is not set. flutter-ci builds only run for tags: set the workflow Start Condition to 'Tag Changes' (custom tags beginning with 'v') and push a tag such as v1.4.0-beta.1. Manual builds of a branch are not supported." \
-      "XCODE_CLOUD_SETUP.md#start-condition"
+      "XCODE_CLOUD_SETUP.md#4-create-the-workflow"
   fi
   cd "$APP_ROOT"
   # Keep the downloaded library and state out of `git status`.
@@ -116,8 +116,10 @@ main() {
   log_step "Generating ios/Flutter/Environment.xcconfig"
   ios_xcconfig "$CONFIG_PATH" "$ENVIRONMENT" >ios/Flutter/Environment.xcconfig
   cat ios/Flutter/Environment.xcconfig
-  if ! grep -q 'Environment.xcconfig' ios/Flutter/Release.xcconfig; then
-    log_warn "ios/Flutter/Release.xcconfig does not include Environment.xcconfig, so display name / app icon will not change per environment. See $(doc_url NEW_PROJECT_SETUP.md#5-one-time-ios-project-setup)"
+  # Only matters when the config sets a name, icon or build settings.
+  if [[ "$(grep -cv '^//' ios/Flutter/Environment.xcconfig)" -gt 0 ]] \
+    && ! grep -q 'Environment.xcconfig' ios/Flutter/Release.xcconfig; then
+    log_warn "environments.$ENVIRONMENT.ios sets a name/icon/build settings, but ios/Flutter/Release.xcconfig does not include Environment.xcconfig, so they are ignored. See $(doc_url XCODE_CLOUD_SETUP.md#optional-different-name-and-icon-for-uat)"
   fi
   if [[ -n "$IOS_GOOGLE_SERVICE_INFO" ]]; then
     [[ -f "$IOS_GOOGLE_SERVICE_INFO" ]] \

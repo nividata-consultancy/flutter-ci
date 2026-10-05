@@ -4,8 +4,7 @@
 # CLI: firebase_distribute.sh --file <path> --app <firebase-app-id>
 #        [--groups "a,b"] [--testers "x@y.z"] [--release-notes-file <path>]
 #
-# Credentials: FIREBASE_SERVICE_ACCOUNT_JSON (raw JSON, GitHub) or
-# FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 (Xcode Cloud).
+# Credentials: FIREBASE_SERVICE_ACCOUNT_JSON (the service account JSON).
 # The Firebase CLI standalone binary is downloaded if `firebase` is missing.
 # Pin it with FIREBASE_TOOLS_VERSION (e.g. 14.20.0); default: latest.
 #
@@ -57,7 +56,7 @@ firebase_distribute() {
 
   local creds_json
   creds_json="$(secret_from_env FIREBASE_SERVICE_ACCOUNT_JSON)"
-  [[ -n "$creds_json" ]] || { log_error "Firebase: FIREBASE_SERVICE_ACCOUNT_JSON (or _BASE64) is not set." "SECRETS.md#firebase-app-distribution"; return 1; }
+  [[ -n "$creds_json" ]] || { log_error "Firebase: the FIREBASE_SERVICE_ACCOUNT_JSON secret is not set." "SECRETS.md#firebase-app-distribution"; return 1; }
 
   local cli tmp creds
   cli="$(ensure_firebase_cli)" || return 1

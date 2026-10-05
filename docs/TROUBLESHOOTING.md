@@ -1,169 +1,146 @@
 # Troubleshooting
 
-Every flutter-ci error links to a section here. Errors look like
-`::error::…` on GitHub (shown as an annotation) and `ERROR: …` in Xcode Cloud logs.
+flutter-ci errors start with `Error:` (GitHub, shown in red) or `ERROR:` (Xcode Cloud log).
+Most end with a link to a section on this page. After fixing, always push a **new tag**.
+
+## Workflow starts when it shouldn't, or not at all
+
+| What you see | Cause and fix |
+|---|---|
+| GitHub: "Invalid workflow file … secret X is not defined in the referenced workflow" | The app passes a secret that the flutter-ci version it uses doesn't know yet. Check that `@v1` is up to date, or remove that line from the app's `release.yml`. |
+| GitHub: a failed run on every push | Usually an invalid workflow file (see above). GitHub then can't read the triggers. flutter-ci's template only starts on tags. |
+| GitHub: a run on a commit | Another workflow file in the app's `.github/workflows/` starts on push. flutter-ci runs show the **tag** as their branch. |
+| Xcode Cloud: a build on every commit | The workflow still has **Branch Changes**, or a leftover **Default** workflow exists. Remove them ([XCODE_CLOUD_SETUP.md](XCODE_CLOUD_SETUP.md#4-create-the-workflow)). |
+| Xcode Cloud: nothing starts on a tag | The tag was pushed before the workflow existed, or the start condition isn't **Tag Changes → beginning with `v`**. Push a new tag. |
+| Xcode Cloud: `CI_TAG is not set` | Someone started a build from a branch. Only tags work. |
 
 ## Scripts not found or not executable
 
-**Symptoms (Xcode Cloud):** the scripts don't run at all, `zsh` errors appear about
-`[[`, `permission denied`, or `ci_post_clone.sh did not finish`.
+Xcode Cloud: the scripts don't run, or you see `zsh` errors, `permission denied` or
+`ci_post_clone.sh did not finish`.
 
-- The scripts must be at `ios/ci_scripts/ci_post_clone.sh` and
-  `ios/ci_scripts/ci_post_xcodebuild.sh`, next to `Runner.xcworkspace`, with these exact names.
-- They must be **executable in git**. Without the bit, Xcode Cloud runs them with zsh:
+- The files must be `ios/ci_scripts/ci_post_clone.sh` and `ci_post_xcodebuild.sh`, next to
+  `Runner.xcworkspace`.
+- They must be executable in git:
   ```bash
+  git ls-files -s ios/ci_scripts          # both lines start with 100755
   git update-index --chmod=+x ios/ci_scripts/ci_post_clone.sh ios/ci_scripts/ci_post_xcodebuild.sh
-  git commit -m "Make ci_scripts executable"
-  git ls-files -s ios/ci_scripts   # both lines must start with 100755
   ```
-- `curl: (22) … 404` while downloading flutter-ci means `FLUTTER_CI_REF` names a
-  ref that doesn't exist (e.g. a typo, or a tag not pushed yet).
-- `ci_post_clone.sh did not finish` in the post-xcodebuild step means the clone
-  step failed earlier. Scroll up to the first `ERROR:`.
+- `curl: (22) … 404` while downloading flutter-ci means `FLUTTER_CI_REF` names a tag or
+  branch that doesn't exist.
+
+## Xcode setup problems
+
+| Problem | Fix |
+|---|---|
+| No "Xcode Cloud" in the Product menu | It's under **Integrate → Create Workflow…** |
+| Xcode shows the wrong GitHub URL (e.g. `github.com-work`) | Use the normal URL for `origin` ([XCODE_CLOUD_SETUP.md](XCODE_CLOUD_SETUP.md#2-use-the-normal-github-url-for-origin)) |
+| "Scheme Runner does not exist" | Share the Runner scheme and commit `ios/Runner.xcodeproj/xcshareddata` |
+| No group in TestFlight Internal Testing | Create one in App Store Connect → TestFlight → Internal Testing → + |
+| Signing error during Archive | Runner target → Signing & Capabilities: automatic signing on, Team set |
+| "Version must be higher" in App Store Connect | Use a tag version above the current App Store version |
 
 ## yq missing
 
-`scripts/common/read_config.sh` needs [mikefarah/yq](https://github.com/mikefarah/yq) v4.
-It is preinstalled on `ubuntu-latest`. On Xcode Cloud it is installed with
-Homebrew. If Homebrew fails, retry the build. A Python `yq` (kislyuk) on PATH is
-not compatible.
+The scripts need [mikefarah/yq](https://github.com/mikefarah/yq) v4. It's preinstalled on
+GitHub's runners and installed automatically on Xcode Cloud. On your Mac, run
+`brew install yq`.
 
 ## Pod install fails
 
-- `CocoaPods could not find compatible versions`: run `pod repo update` locally,
-  commit `ios/Podfile.lock`, and make sure the iOS deployment target in `ios/Podfile`
-  matches the plugins. The script already retries once with `--repo-update`.
-- `Generated.xcconfig must exist`: `flutter build ios --config-only` failed earlier.
-  Check the log above it.
-- Apps on Swift Package Manager without an `ios/Podfile` skip this step.
+- Run `cd ios && pod install` locally, commit `ios/Podfile.lock`, push and use a new tag.
+- `Generated.xcconfig must exist`: `flutter build ios --config-only` failed earlier. Look
+  above in the log.
+- Apps without an `ios/Podfile` (Swift Package Manager) skip this step.
 
 ## Flutter version mismatch
 
-- `Could not find the Flutter version`: add `.fvmrc` or `environment.flutter`. See
-  [CONFIG_REFERENCE.md](CONFIG_REFERENCE.md#flutter-version).
-- `must be an exact release`: replace ranges like `>=3.22.0` with `3.24.5`.
-- `Could not clone Flutter X`: the version must be a tag in flutter/flutter
-  (see the [Flutter release archive](https://docs.flutter.dev/release/archive)).
-- Local build works but CI fails with Dart SDK errors: your local Flutter is not
-  the pinned one. Run `fvm use` or update the pin.
-- Xcode Cloud: an old Xcode version selected in the workflow can be too old for
-  newer Flutter. Raise it in the workflow's Environment.
+- `Could not find the Flutter version`: add `.fvmrc` with `{"flutter": "X.Y.Z"}`.
+- `must be an exact release`: use e.g. `3.24.5`, not `>=3.22.0` or `stable`.
+- `Could not clone Flutter X`: X must be a real Flutter release
+  ([release list](https://docs.flutter.dev/release/archive)).
+- Xcode Cloud fails with SDK errors: the Xcode version chosen in the workflow is too old
+  for this Flutter version. Choose a newer one.
+
+## Android build fails
+
+- `Missing signing secrets`: add the four `ANDROID_*` secrets ([SECRETS.md](SECRETS.md#android-signing)).
+- `The keystore could not be opened`: wrong password or alias, or the base64 value is
+  incomplete. Set `ANDROID_KEYSTORE_BASE64` again with `base64 -i file.jks | gh secret set …`.
+- `No android/ directory`: the app isn't at the repo root. Set `app-directory` in the
+  app's `release.yml`.
+- `Flavor … not found`: `android.flavor` must match `productFlavors`, or be removed.
+- The build is signed with debug keys: the Gradle file doesn't read `key.properties`
+  ([NEW_PROJECT_SETUP.md](NEW_PROJECT_SETUP.md#3-android-signing-in-gradle)).
 
 ## versionCode already used
 
-`APK specifies a version code that has already been used` (Play).
-
-- The versionCode is `github.run_number + build_number_offset`. For an app that
-  was uploaded before flutter-ci, raise `app.build_number_offset` above the highest
-  existing versionCode.
-- **Re-running** a GitHub workflow keeps the same run number. Push a new tag instead,
-  e.g. `v1.4.0-beta.2`.
-- Renaming or recreating the caller workflow file resets `run_number`. Raise the
-  offset accordingly.
+`Version code X has already been used` (Play):
+- Raise `app.build_number_offset` above the highest version code on Play.
+- Don't re-run a GitHub workflow; it reuses the same number. Push a new tag.
 
 ## Prod guard rejected
 
-`Prod guard: commit abc1234 is not on any prod branch (main)`.
-
-This only happens when the app sets `app.prod_branches`. Prod tags (`vX.Y.Z`)
-must then point to a commit that is already on one of those branches. To allow
-prod tags from any branch, remove `prod_branches` from `.ci/config.yaml`.
-
+Only for apps with `app.prod_branches`. The prod tag's commit isn't on one of those
+branches. Delete the tag, merge the commit into the branch, and tag the merged commit:
 ```bash
 git push --delete origin v1.4.0 && git tag -d v1.4.0
-# merge the change into main, then:
-git checkout main && git pull && git tag v1.4.0 && git push origin v1.4.0
 ```
+To allow prod tags from any branch, remove `prod_branches` from the config.
 
-- `none of the prod branches … exist`: check the branch names in `prod_branches`.
-- `could not fetch history … (shallow clone)`: Xcode Cloud could not fetch from
-  `origin`. Check that the Xcode Cloud GitHub app still has access to the repository.
-- For hotfix branches, add them to `prod_branches`.
+## First Play upload
+
+`Package not found`: Google doesn't allow the very first upload of a new app through
+the API. Upload one AAB by hand in Play Console → Testing → Internal testing → Create
+new release.
+
+`Only releases with status draft may be created on draft app`: the app has never been
+published. Set `playstore: { enabled: true, tracks: [internal], status: draft }` until
+the first release is out. Each build then waits as a draft in Play Console.
+
+## Play production draft fails
+
+- `HTTP 403`: the Play service account needs the "Release to production…" permission
+  ([SECRETS.md](SECRETS.md#google-play)).
+- `HTTP 400 / 409`: another draft or a release under review blocks it. Finish or
+  discard it in Play Console → Production.
+- Not possible on a **draft app** (never published). Use `tracks: [internal]` until the
+  first release.
+- New service accounts can take up to 24 hours to get their permissions.
+
+## Firebase upload fails
+
+- `PERMISSION_DENIED` / `403`: the service account needs the **Firebase App Distribution
+  Admin** role, in the **same** Firebase project.
+- `App not found`: `FIREBASE_ANDROID_APP_ID` is wrong, or belongs to another project.
+- `Invalid group alias`: use the group's **alias**, not its display name.
+- AAB uploads need the Firebase project linked to Play. Add `apk` to `artifacts` to avoid this.
 
 ## Drive upload fails
 
 `Drive: no answer from Google while starting the upload / sending the file (HTTP 000)`
-means the connection failed. The message includes curl's own error:
+is a connection problem. The message includes curl's own error:
+- `Could not resolve host` / `Connection timed out`: a temporary network problem.
+  The script already retries 3 times; push a new tag.
+- `Operation timed out` while sending: the file took too long. Upload only the APK
+  (`artifacts: [apk]`).
 
-- `Could not resolve host` / `Connection timed out`: a temporary network problem
-  on the runner. The script already retries 3 times; push a new tag to try again.
-- `Operation timed out` while sending the file: the upload took longer than 30
-  minutes. Upload only the APK by setting `artifacts: [apk]`, or check the runner's network.
-- `URL rejected` / `No URL set`: Google returned no upload address. Report it with the log.
+Other `Drive: upload failed (HTTP …)` errors include Google's reason:
+- `401` / `invalid_grant`: the refresh token expired or was removed, or the consent
+  screen is still in "Testing". Make a new token ([SECRETS.md](SECRETS.md#option-b-your-own-google-account-my-drive)).
+- `403 … has not been used in project`: enable the **Google Drive API** in that Cloud project.
 
-Other `Drive: upload failed (HTTP 4xx/5xx …)` messages include Google's reason.
-`401`/`403` usually means the token or the folder permissions; see below.
+Errors from the folder helper (`gdrive_create_folder.sh`):
+- `The OAuth client was not found` / `not an OAuth client ID`: wrong client ID. It must
+  end with `.apps.googleusercontent.com`.
+- `invalid_client`: the client secret doesn't match the client ID.
+- `invalid_grant`: the refresh token belongs to another client. Make it again in the
+  Playground with "Use your own OAuth credentials".
 
 ## Drive: storage quota exceeded
 
-`Drive: storage quota exceeded` / `storageQuotaExceeded` / `notFound` / `invalid_grant`.
-
-- **Service account (`GDRIVE_SERVICE_ACCOUNT_JSON`):** service accounts have no
-  storage of their own. The folder must be **inside a Shared Drive**, and the
-  service account must be a member of it (Content manager). A My Drive folder
-  shared with the service account is **not** enough. If you have no Shared Drive,
-  use your own account instead (Option B).
-- **Your own account (`GDRIVE_OAUTH_*`):** `storageQuotaExceeded` means that
-  account's Drive is full. `notFound` usually means the folder was created by hand. With the
-  `drive.file` scope CI only sees folders it created, so create the folder with
-  `scripts/tools/gdrive_create_folder.sh`. It can also mean the folder ID is wrong. `invalid_grant`
-  means the refresh token expired or was revoked (or the consent screen is still
-  in "Testing", where tokens last 7 days). Create a new one.
-
-See [SECRETS.md](SECRETS.md#google-drive) for both options.
-
-## First Play upload
-
-Google Play's API cannot upload the first build of a new app (`Package not
-found: com.example.app`). Do it once by hand:
-
-1. Build locally with `flutter build appbundle --release`, signed with the upload key.
-2. Play Console → your app → Testing → Internal testing → Create new release →
-   upload the AAB → save and roll out.
-3. Complete the app content questionnaires if Play asks for them.
-
-While the app itself is still a **draft** in Play Console (never published to any
-track), uploads fail with `Only releases with status draft may be created on draft app`.
-Set `playstore: { track: internal, status: draft }` until the first release is out,
-then remove `status`.
-
-## Play production draft fails
-
-`Play production draft: … (HTTP 403)`: the Play service account needs the
-*Release to production…* permission for this app (see [SECRETS.md](SECRETS.md#google-play)).
-
-`… (HTTP 400/409)`: the production track already has a draft or an in-review
-release that conflicts. Open Play Console → Production, finish or discard it, then
-push a new tag. While the app is still a **draft app**, production releases are not
-possible yet. Remove `production` from `playstore.tracks` until the first release is published.
-
-## Firebase upload fails
-
-- `403` / `PERMISSION_DENIED`: the service account needs the **Firebase App
-  Distribution Admin** role in the Firebase project.
-- `App not found`: the app ID must match the platform (`:android:` vs `:ios:`) and the project.
-- `Invalid group alias`: use the group's alias, not its display name.
-- AAB uploads need the Firebase project linked to Google Play. Build an `apk` as
-  well (`artifacts: [aab, apk]`) to avoid this.
-
-## Android build fails
-
-- `No android/ directory`: set the `app-directory` input if the app is not at the repo root.
-- `Missing signing secrets`: pass all four `ANDROID_*` secrets from the caller.
-  See [SECRETS.md](SECRETS.md#android-signing).
-- `The keystore could not be opened`: wrong password or alias, or the base64 value
-  was truncated (use `base64 -i` on macOS or `base64 -w0` on Linux).
-- `Task … not found` / `Flavor … not found`: `android.flavor` must match a Gradle
-  `productFlavors` entry, or should be left out.
-- Gradle/JDK errors: set `app.java_version` to what your Android Gradle Plugin needs
-  (AGP 8 needs 17+).
-- The release is signed with debug keys: your `build.gradle(.kts)` does not read
-  `key.properties`. See [NEW_PROJECT_SETUP.md](NEW_PROJECT_SETUP.md#3-android-signing-in-gradle).
-
-## iOS name or icon does not change per environment
-
-- `Release.xcconfig` does not include `Environment.xcconfig`. The build log shows
-  a warning about this.
-- The Runner **target** still sets *Primary App Icon Set Name*. Delete it so the
-  xcconfig value applies (NEW_PROJECT_SETUP step 5.3).
-- `Info.plist` must use `$(APP_DISPLAY_NAME)` for `CFBundleDisplayName`.
+- **Service account (Option A):** the folder must be inside a **Shared Drive**. A My Drive
+  folder doesn't work, even when shared. Without Google Workspace, use Option B.
+- **Own account (Option B):** that account's Drive is full.
+- `notFound` (Option B): the folder was made by hand. Create it with
+  `scripts/tools/gdrive_create_folder.sh`, then use the printed `folder_id`.

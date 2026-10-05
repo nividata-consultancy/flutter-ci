@@ -1,5 +1,6 @@
 #!/bin/bash
-# Build short release notes for testers (TestFlight, Firebase, Play, GitHub).
+# Build release notes: used for Firebase App Distribution (testers) and the
+# GitHub Release body (developers). TestFlight and Play get no notes.
 #
 #   [UAT] v1.4.0-beta.1 · abc1234
 #   Fixed login crash, added dark mode        <- the tag message, if any
@@ -9,12 +10,10 @@
 #   git tag -a v1.4.0-beta.1 -m "Fixed login crash, added dark mode"
 # A lightweight tag (git tag v1.4.0-beta.1) falls back to commit subjects.
 #
-# The first line is how testers tell UAT and PROD builds apart: both carry
-# the same version number in TestFlight / Play.
+# The first line tells testers whether it is a UAT or PROD build.
 #
 # CLI: release_notes.sh <tag> [--max-bytes N] [--max-commits N] [--commit REV] [--with-commits]
-#   --max-bytes    hard size limit in bytes (default 1000; TestFlight <1 KB,
-#                  Play "what's new" is 500 characters)
+#   --max-bytes    hard size limit in bytes (default 1000)
 #   --max-commits  number of commit subjects (default 5)
 #   --with-commits list commits even when the tag has a message
 #
