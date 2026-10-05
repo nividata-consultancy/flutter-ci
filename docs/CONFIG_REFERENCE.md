@@ -30,7 +30,6 @@ environments:
     dart_define_file: env/uat.json
     android:
       enabled: true
-      artifacts: [aab, apk]
       destinations:
         playstore: { enabled: true,  tracks: [internal] }
         firebase:  { enabled: true,  groups: "qa-team" }
@@ -42,7 +41,6 @@ environments:
     dart_define_file: env/prod.json
     android:
       enabled: true
-      artifacts: [aab]
       destinations:
         playstore: { enabled: true,  tracks: [internal, production] }
         firebase:  { enabled: false, groups: "qa-team" }
@@ -69,7 +67,7 @@ environments:
 | `obfuscate` | bool | `false` | `--obfuscate --split-debug-info` (the symbols are kept with the Android build files) |
 | `android_package_name` | string | — | `applicationId`. Required when Play is enabled. |
 | `github_release.enabled` | bool | `true` | Create a GitHub Release on the app repo for each tag (prerelease for UAT) |
-| `github_release.attach_artifacts` | bool | `false` | Attach the APK/AAB to that release |
+| `github_release.attach_artifacts` | bool | `false` | Attach the APK to that release |
 
 Tests and analysis run on GitHub only. iOS doesn't run them again.
 
@@ -117,12 +115,12 @@ If `dart_define_file` is set but neither 1 nor 2 exists, the build fails.
 | `enabled` | bool | `true` | See [Platform switches](#platform-switches) |
 | `flavor` | string | none | `--flavor`. Only if Gradle has `productFlavors`. |
 | `target` | path | `lib/main.dart` | `--target` |
-| `artifacts` | list of `aab`, `apk` | `[aab]` | What to build. Play needs `aab`; Firebase works best with `apk`. |
 | `destinations` | map | none | See [Destinations](#destinations) |
 
-The versionName is the full tag version (`1.4.0-beta.1`). Files are named
-`<name>-<env>-<version>-<build>.apk/.aab`. They're always attached to the GitHub run
-(Actions → run → Artifacts).
+CI always builds an **APK**. That APK goes to Firebase and Drive, and is kept on the
+GitHub run (Actions → run → Artifacts). When Play is enabled, CI also builds an **AAB**,
+only for the Play upload, because Play accepts nothing else. Files are named
+`<name>-<env>-<version>-<build>.apk`. The versionName is the full tag version (`1.4.0-beta.1`).
 
 ## Destinations
 
@@ -140,8 +138,8 @@ destinations:
 | Destination | Keys | What happens |
 |---|---|---|
 | `playstore` | `enabled`, `tracks` (**required**, see below), `status` (`completed` by default; `draft` while the app has never been published) | Uploads the AAB and `mapping.txt`. Release name `[UAT] 1.4.0-beta.1 (N)`. No release notes. Needs `app.android_package_name`. |
-| `firebase` | `enabled`, `groups` (comma-separated group aliases), `testers` (comma-separated emails) | Uploads the APK if built, otherwise the AAB (an AAB only works if the Firebase project is linked to Play). Release notes = tag message. |
-| `drive` | `enabled`, `folder_id` (**required** when enabled, from the folder URL) | Uploads the APK and AAB. See [ANDROID_SETUP.md → Google Drive](ANDROID_SETUP.md#5c-google-drive) for the two ways to give access. |
+| `firebase` | `enabled`, `groups` (comma-separated group aliases), `testers` (comma-separated emails) | Uploads the APK. Release notes = tag message. |
+| `drive` | `enabled`, `folder_id` (**required** when enabled, from the folder URL) | Uploads the APK. See [ANDROID_SETUP.md → Google Drive](ANDROID_SETUP.md#5c-google-drive) for the two ways to give access. |
 
 ### Play tracks
 

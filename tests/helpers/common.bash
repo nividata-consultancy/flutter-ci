@@ -33,7 +33,6 @@ environments:
     android:
       flavor: uat
       target: lib/main.dart
-      artifacts: [aab, apk]
       destinations:
         playstore: { enabled: true, tracks: [internal] }
         firebase: { enabled: true, groups: "qa-team" }
@@ -47,7 +46,6 @@ environments:
   prod:
     dart_define_file: env/prod.json
     android:
-      artifacts: [aab]
       destinations:
         playstore: { enabled: true, tracks: [internal, production] }
         firebase: { enabled: false, groups: "qa-team" }

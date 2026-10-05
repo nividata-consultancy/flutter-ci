@@ -145,19 +145,10 @@ _cfg_validate_android() {
     [[ "$(cfg "$p.target")" == *.dart ]] || _cfg_err "$label.target must point to a .dart file"
   fi
 
-  local has_aab=1 has_apk=0
-  if _cfg_expect_type "$p.artifacts" "$label.artifacts" '!!seq'; then
-    has_aab=0
-    local a n=0
-    while IFS= read -r a; do
-      n=$((n + 1))
-      case "$a" in
-        aab) has_aab=1 ;;
-        apk) has_apk=1 ;;
-        *) _cfg_err "$label.artifacts: '$a' is not supported (use aab and/or apk)" ;;
-      esac
-    done < <(cfg_list "$p.artifacts")
-    [[ $n -gt 0 ]] || _cfg_err "$label.artifacts must list at least one of: aab, apk"
+  # `artifacts` was removed in v1.2.1: CI always builds the APK, plus an AAB
+  # when Play is enabled. Old configs keep working; the key is ignored.
+  if cfg_has "$p.artifacts"; then
+    _CFG_WARNINGS+=("$label.artifacts is no longer used and is ignored (CI builds the APK, plus an AAB for Play). You can delete this line")
   fi
 
   local d="$p.destinations" dl="$label.destinations"
@@ -192,7 +183,6 @@ _cfg_validate_android() {
           *) _cfg_err "$dl.playstore.status must be 'completed' or 'draft'" ;;
         esac
       fi
-      [[ $has_aab -eq 1 ]] || _cfg_err "$dl.playstore needs 'aab' in $label.artifacts (Play only accepts app bundles)"
       cfg_has '.app.android_package_name' \
         || _cfg_err "app.android_package_name is required when the playstore destination is enabled"
     fi
@@ -202,9 +192,6 @@ _cfg_validate_android() {
     if _cfg_dest_enabled "$d.firebase" "$dl.firebase"; then
       _cfg_expect_type "$d.firebase.groups" "$dl.firebase.groups" '!!str' || true
       _cfg_expect_type "$d.firebase.testers" "$dl.firebase.testers" '!!str' || true
-      if [[ $has_apk -eq 0 ]]; then
-        _CFG_WARNINGS+=("$dl.firebase: no 'apk' in artifacts, so the AAB will be uploaded; that only works if the Firebase project is linked to Google Play")
-      fi
     fi
   fi
   if cfg_has "$d.drive" && _cfg_expect_type "$d.drive" "$dl.drive" '!!map'; then

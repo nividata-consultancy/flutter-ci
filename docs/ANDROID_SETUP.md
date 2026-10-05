@@ -215,7 +215,6 @@ published**, add `status: draft`:
    gh secret set FIREBASE_ANDROID_APP_ID --body "1:1234567890:android:abc123"
    ```
 
-Add `apk` to `artifacts` (`artifacts: [aab, apk]`); Firebase installs APKs directly.
 Testers get an email and install with the **App Tester** app. The **tag message** is
 used as the release notes.
 

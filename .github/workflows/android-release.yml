@@ -239,7 +239,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ steps.build.outputs.ARTIFACT_BASENAME }}
-          path: ${{ inputs.app-directory }}/${{ steps.build.outputs.ARTIFACTS_DIR }}
+          path: |
+            ${{ inputs.app-directory }}/${{ steps.build.outputs.APK_PATH }}
+            ${{ steps.build.outputs.SYMBOLS_PATH != '' && format('{0}/{1}', inputs.app-directory, steps.build.outputs.SYMBOLS_PATH) || '' }}
           if-no-files-found: error
 
       - name: Release notes for Firebase (tag message, else commits)
@@ -288,7 +290,7 @@ jobs:
         with:
           service-account-json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           app-id: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
-          file: ${{ steps.build.outputs.APK_PATH || steps.build.outputs.AAB_PATH }}
+          file: ${{ steps.build.outputs.APK_PATH }}
           groups: ${{ steps.ctx.outputs.FIREBASE_GROUPS }}
           testers: ${{ steps.ctx.outputs.FIREBASE_TESTERS }}
           release-notes-file: ${{ steps.notes.outputs.short }}
@@ -304,9 +306,7 @@ jobs:
           oauth-client-secret: ${{ secrets.GDRIVE_OAUTH_CLIENT_SECRET }}
           oauth-refresh-token: ${{ secrets.GDRIVE_OAUTH_REFRESH_TOKEN }}
           folder-id: ${{ steps.ctx.outputs.DRIVE_FOLDER_ID }}
-          files: |
-            ${{ steps.build.outputs.APK_PATH }}
-            ${{ steps.build.outputs.AAB_PATH }}
+          files: ${{ steps.build.outputs.APK_PATH }}
           working-directory: ${{ inputs.app-directory }}
 
       - name: Create GitHub Release
@@ -319,7 +319,7 @@ jobs:
           body_path: ${{ steps.notes.outputs.long }}
           prerelease: ${{ steps.ctx.outputs.IS_PRERELEASE == 'true' }}
           make_latest: ${{ steps.ctx.outputs.IS_PRERELEASE == 'true' && 'false' || 'true' }}
-          files: ${{ steps.ctx.outputs.GITHUB_RELEASE_ATTACH == 'true' && format('{0}/{1}/*', inputs.app-directory, steps.build.outputs.ARTIFACTS_DIR) || '' }}
+          files: ${{ steps.ctx.outputs.GITHUB_RELEASE_ATTACH == 'true' && format('{0}/{1}', inputs.app-directory, steps.build.outputs.APK_PATH) || '' }}
 
       - name: Remove signing files
         if: always()

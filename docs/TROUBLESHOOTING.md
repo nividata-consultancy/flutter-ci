@@ -114,7 +114,6 @@ the first release is out. Each build then waits as a draft in Play Console.
   Admin** role, in the **same** Firebase project.
 - `App not found`: `FIREBASE_ANDROID_APP_ID` is wrong, or belongs to another project.
 - `Invalid group alias`: use the group's **alias**, not its display name.
-- AAB uploads need the Firebase project linked to Play. Add `apk` to `artifacts` to avoid this.
 
 ## Drive upload fails
 
@@ -122,8 +121,7 @@ the first release is out. Each build then waits as a draft in Play Console.
 is a connection problem. The message includes curl's own error:
 - `Could not resolve host` / `Connection timed out`: a temporary network problem.
   The script already retries 3 times; push a new tag.
-- `Operation timed out` while sending: the file took too long. Upload only the APK
-  (`artifacts: [apk]`).
+- `Operation timed out` while sending: the upload took too long. Push a new tag to try again.
 
 Other `Drive: upload failed (HTTP …)` errors include Google's reason:
 - `401` / `invalid_grant`: the refresh token expired or was removed, or the consent

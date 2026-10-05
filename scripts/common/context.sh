@@ -78,9 +78,6 @@ resolve_context() {
     _ctx ANDROID_PACKAGE_NAME "$(cfg '.app.android_package_name')"
     _ctx ANDROID_FLAVOR "$(cfg "$a.flavor")"
     _ctx ANDROID_TARGET "$(cfg "$a.target")"
-    local artifacts
-    artifacts="$(cfg_list "$a.artifacts" | tr '\n' ' ' | sed 's/ *$//')"
-    _ctx ANDROID_ARTIFACTS "${artifacts:-aab}"
     local dest="$a.destinations"
     _ctx PLAYSTORE_ENABLED "$(_ctx_enabled "$dest.playstore")"
     # tracks: [internal] | [production] | [internal, production]
@@ -93,6 +90,12 @@ resolve_context() {
     _ctx PLAYSTORE_TESTING_TRACK "$testing"
     _ctx PLAYSTORE_PRODUCTION "$production"
     _ctx PLAYSTORE_STATUS "$(cfg "$dest.playstore.status" completed)"
+    # Always the APK; Play only accepts app bundles, so add the AAB for it.
+    if [[ "$PLAYSTORE_ENABLED" == "true" ]]; then
+      _ctx ANDROID_ARTIFACTS "aab apk"
+    else
+      _ctx ANDROID_ARTIFACTS "apk"
+    fi
     _ctx FIREBASE_ENABLED "$(_ctx_enabled "$dest.firebase")"
     _ctx FIREBASE_GROUPS "$(cfg "$dest.firebase.groups")"
     _ctx FIREBASE_TESTERS "$(cfg "$dest.firebase.testers")"

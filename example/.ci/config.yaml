@@ -14,7 +14,6 @@ environments:
   uat:
     dart_define_file: env/uat.json
     android:
-      artifacts: [aab, apk]
       destinations:
         playstore: { enabled: true, tracks: [internal] }
     ios:
@@ -23,7 +22,6 @@ environments:
   prod:
     dart_define_file: env/prod.json
     android:
-      artifacts: [aab]
       destinations:
         playstore: { enabled: true, tracks: [internal] }
     ios:

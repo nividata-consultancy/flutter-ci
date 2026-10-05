@@ -91,12 +91,11 @@ set_yq() { yq -i e "$1" "$CFG"; }
   [[ "$output" == *"unknown key 'staging'"* ]]
 }
 
-@test "bad artifacts" {
-  set_yq '.environments.uat.android.artifacts = ["ipa"]'
+@test "old artifacts key is ignored with a warning" {
+  set_yq '.environments.uat.android.artifacts = ["aab"]'
   run "$SCRIPTS/read_config.sh" validate "$CFG"
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"'ipa' is not supported"* ]]
-  [[ "$output" == *"playstore needs 'aab'"* ]]
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"artifacts is no longer used"* ]]
 }
 
 @test "production track is prod-only" {
@@ -132,13 +131,6 @@ set_yq() { yq -i e "$1" "$CFG"; }
   run "$SCRIPTS/read_config.sh" validate "$CFG"
   [ "$status" -eq 1 ]
   [[ "$output" == *"'bad-key' is not a valid build setting name"* ]]
-}
-
-@test "firebase without apk only warns" {
-  set_yq '.environments.uat.android.artifacts = ["aab"]'
-  run "$SCRIPTS/read_config.sh" validate "$CFG"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"WARNING:"*"linked to Google Play"* ]]
 }
 
 @test "get returns false booleans and empty for missing" {

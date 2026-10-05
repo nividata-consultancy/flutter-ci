@@ -9,6 +9,13 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 ## [1.2.1] - 2026-10-05
 
 ### Changed
+- Android build files are chosen automatically: CI always builds the APK (kept on
+  the GitHub run, sent to Firebase and Drive) and adds an AAB only when Play is
+  enabled. The `artifacts` config key is no longer used; existing configs keep
+  working with a warning.
+- Docs: one step-by-step guide per platform (`docs/ANDROID_SETUP.md`,
+  `docs/IOS_SETUP.md`) and `docs/RELEASES.md` for daily use; maintainer docs moved
+  to `docs/maintainers/`.
 - All docs rewritten for the current setup (Android destinations and Play tracks,
   iOS to TestFlight only, platform switches, Drive options, Xcode Cloud steps as
   they appear in current Xcode). Removed notes about features that no longer exist.

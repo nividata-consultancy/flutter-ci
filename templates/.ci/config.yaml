@@ -20,7 +20,6 @@ environments:
       enabled: true                   # false = UAT tags build nothing on Android
       # flavor: uat                   # only if android/app/build.gradle defines productFlavors
       # target: lib/main.dart
-      artifacts: [aab, apk]           # aab | apk
       destinations:                   # builds go only where enabled: true
         playstore: { enabled: true,  tracks: [internal] }                # Play internal testing
         firebase:  { enabled: false, groups: "qa-team" }                 # Firebase App Distribution (tag message = release notes)
@@ -37,7 +36,6 @@ environments:
     # dart_define_file: env/prod.json
     android:
       enabled: true
-      artifacts: [aab]
       destinations:
         # tracks: [internal] = internal only, [production] = production only (draft),
         #         [internal, production] = both. Production is always a DRAFT.
