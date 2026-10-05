@@ -27,7 +27,7 @@ parse_tag() {
 
   if [[ -z "$tag" ]]; then
     log_error "No tag given. Builds are triggered only by pushing a tag like v1.4.0-beta.1 (UAT) or v1.4.0 (prod)." \
-      "TAGGING_AND_RELEASES.md#tag-format"
+      "RELEASES.md#tag-format"
     return 1
   fi
 
@@ -45,7 +45,7 @@ parse_tag() {
     IS_PRERELEASE="false"
   else
     log_error "Tag '$tag' does not match the tag convention. Use vX.Y.Z-beta.N for UAT (e.g. v1.4.0-beta.1) or vX.Y.Z for prod (e.g. v1.4.0)." \
-      "TAGGING_AND_RELEASES.md#tag-format"
+      "RELEASES.md#tag-format"
     return 1
   fi
   export TAG ENVIRONMENT VERSION_NAME VERSION_NAME_FULL IS_PRERELEASE

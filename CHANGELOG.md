@@ -2,7 +2,7 @@
 
 All notable changes to flutter-ci. Versions follow [SemVer](https://semver.org/);
 apps track the major tag (`v1`). Breaking changes and migrations are described
-in [docs/MAINTAINING.md](docs/MAINTAINING.md#migrations).
+in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations).
 
 ## [Unreleased]
 

@@ -39,7 +39,7 @@ teardown() { teardown_tmp; }
   for tag in v1.4 v1.4.0-rc1 v1.4.0-beta v1.4.0-beta.x v1.4.0-beta.1.2 1.4.0 V1.4.0 v1.4.0.1 "v1.4.0 " v1.4.0+5 release-1; do
     run "$SCRIPTS/parse_tag.sh" "$tag"
     [ "$status" -eq 1 ] || { echo "accepted: '$tag'"; return 1; }
-    [[ "$output" == *"ERROR:"*"TAGGING_AND_RELEASES.md#tag-format"* ]]
+    [[ "$output" == *"ERROR:"*"RELEASES.md#tag-format"* ]]
   done
 }
 

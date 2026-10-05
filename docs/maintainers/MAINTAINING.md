@@ -32,7 +32,7 @@ Android build of `example/` through `android-release.yml` at that commit.
 
 ## Versions
 
-- Releases are `vX.Y.Z`, each with a section in [CHANGELOG.md](../CHANGELOG.md).
+- Releases are `vX.Y.Z`, each with a section in [CHANGELOG.md](../../CHANGELOG.md).
 - The **major tag** `v1` points to the newest `v1.x.y`. Every app tracks it
   (`@v1` + `ci-lib-ref: v1`, and `FLUTTER_CI_REF=v1`).
 - **Non-breaking** changes (fixes, new *optional* keys, inputs or secrets) ship as `v1.x.y`.

@@ -47,7 +47,7 @@ runs:
         LOG_SH: ${{ github.action_path }}/../../scripts/common/log.sh
       run: |
         source "$LOG_SH"
-        [[ -n "$SA" ]] || die "PLAY_SERVICE_ACCOUNT_JSON is not set." "SECRETS.md#google-play"
+        [[ -n "$SA" ]] || die "PLAY_SERVICE_ACCOUNT_JSON is not set." "ANDROID_SETUP.md#5a-play-store"
         [[ -n "$TESTING" || "$PRODUCTION" == "true" ]] || die "No Play track selected (playstore.tracks)." "CONFIG_REFERENCE.md#destinations"
 
     # Testing track (e.g. internal), with or without production.

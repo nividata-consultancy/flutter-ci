@@ -16,7 +16,7 @@ google_access_token() {
   local sa="$1" scope="$2" email key_file token_uri now header claims unsigned sig resp token
   email="$(yq -p json -oy e '.client_email // ""' "$sa")"
   token_uri="$(yq -p json -oy e '.token_uri // "https://oauth2.googleapis.com/token"' "$sa")"
-  [[ -n "$email" ]] || { log_error "The service account JSON has no client_email." "SECRETS.md"; return 1; }
+  [[ -n "$email" ]] || { log_error "The service account JSON has no client_email." "ANDROID_SETUP.md"; return 1; }
 
   key_file="$(ci_temp_dir)/google-key.pem"
   yq -p json -oy e '.private_key' "$sa" | write_secret_file "$key_file"
@@ -34,7 +34,7 @@ google_access_token() {
     --data-urlencode "assertion=$unsigned.$sig")" || { log_error "Google token request failed."; return 1; }
   token="$(printf '%s' "$resp" | yq -p json -oy e '.access_token // ""' -)"
   if [[ -z "$token" ]]; then
-    log_error "Could not get a Google access token: $(printf '%s' "$resp" | yq -p json -oy e '.error_description // .error // "unknown error"' -)" "SECRETS.md"
+    log_error "Could not get a Google access token: $(printf '%s' "$resp" | yq -p json -oy e '.error_description // .error // "unknown error"' -)" "ANDROID_SETUP.md"
     return 1
   fi
   mask "$token"
@@ -51,7 +51,7 @@ google_access_token_from_refresh() {
   token="$(printf '%s' "$resp" | yq -p json -oy e '.access_token // ""' -)"
   if [[ -z "$token" ]]; then
     log_error "Could not get a Google access token from the refresh token: $(printf '%s' "$resp" | yq -p json -oy e '.error_description // .error // "unknown error"' -). If it says 'invalid_grant', create a new refresh token." \
-      "SECRETS.md#option-b-your-own-google-account-my-drive"
+      "ANDROID_SETUP.md#option-2-your-own-google-account"
     return 1
   fi
   mask "$token"

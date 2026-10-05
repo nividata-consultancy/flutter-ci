@@ -3,7 +3,7 @@
 #
 # CLI: ios_xcconfig.sh <config.yaml> <env>    prints the file content
 #
-# One-time app setup (docs/NEW_PROJECT_SETUP.md): Release.xcconfig ends with
+# One-time app setup (docs/ANDROID_SETUP.md): Release.xcconfig ends with
 #   #include? "Environment.xcconfig"
 # and Info.plist uses $(APP_DISPLAY_NAME). Settings that are not configured
 # are left out so the defaults in Release.xcconfig apply.

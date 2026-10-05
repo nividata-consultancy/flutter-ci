@@ -42,7 +42,7 @@ config_load() {
   local file="$1"
   if [[ ! -f "$file" ]]; then
     die "Config file '$file' not found. Copy templates/.ci/config.yaml into your app repo." \
-      "NEW_PROJECT_SETUP.md#2-fill-in-ciconfigyaml"
+      "ANDROID_SETUP.md#step-2-fill-in-the-config"
   fi
   if ! yq e 'true' "$file" >/dev/null 2>&1; then
     die "Config file '$file' is not valid YAML: $(yq e 'true' "$file" 2>&1 | head -n 3)" \
@@ -283,7 +283,7 @@ validate_config() {
     if ! cfg_has '.version'; then
       _cfg_err "version is required (current schema: version: $FLUTTER_CI_SCHEMA_VERSION)"
     elif [[ "$(cfg '.version')" != "$FLUTTER_CI_SCHEMA_VERSION" ]]; then
-      _cfg_err "version: $(cfg '.version') is not supported by this flutter-ci release (expected $FLUTTER_CI_SCHEMA_VERSION). See docs/MAINTAINING.md for migrations"
+      _cfg_err "version: $(cfg '.version') is not supported by this flutter-ci release (expected $FLUTTER_CI_SCHEMA_VERSION). See docs/maintainers/MAINTAINING.md for migrations"
     fi
 
     # ---- app

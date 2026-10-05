@@ -33,7 +33,7 @@ resolve_dart_defines() {
   json="$(secret_from_env "$var")"
   if [[ -n "$json" ]]; then
     if ! printf '%s' "$json" | yq -p json -oy e 'true' - >/dev/null 2>&1; then
-      log_error "$var (or ${var}_BASE64) is not valid JSON." "SECRETS.md#dart-defines"
+      log_error "$var (or ${var}_BASE64) is not valid JSON." "CONFIG_REFERENCE.md#dart-defines"
       return 1
     fi
     out="$(ci_temp_dir)/dart_defines.$env.json"

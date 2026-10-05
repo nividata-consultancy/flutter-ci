@@ -35,13 +35,13 @@ signing_write() {
       log_warn "Signing secrets missing (${missing[*]}); dry-run continues with the app's fallback signing config."
       return 0
     fi
-    die "Missing signing secrets: ${missing[*]}. Pass them from your caller workflow." "SECRETS.md#android-signing"
+    die "Missing signing secrets: ${missing[*]}. Pass them from your caller workflow." "ANDROID_SETUP.md#step-4-signing-secrets"
   fi
 
   [[ -d android ]] || die "No android/ directory in $(pwd). Is app-directory set correctly?" "TROUBLESHOOTING.md#android-build-fails"
   if git ls-files --error-unmatch "$KEY_PROPERTIES" >/dev/null 2>&1; then
     die "$KEY_PROPERTIES is committed to git. Remove it from the repo (git rm --cached) and add it to .gitignore; CI writes it from secrets." \
-      "SECRETS.md#android-signing"
+      "ANDROID_SETUP.md#step-4-signing-secrets"
   fi
 
   mask "$ANDROID_KEYSTORE_PASSWORD"
@@ -51,13 +51,13 @@ signing_write() {
   dir="$(ci_temp_dir)"
   keystore="$dir/upload-keystore.jks"
   if ! printf '%s' "$ANDROID_KEYSTORE_BASE64" | b64decode | write_secret_file "$keystore" || [[ ! -s "$keystore" ]]; then
-    die "ANDROID_KEYSTORE_BASE64 is not valid base64." "SECRETS.md#android-signing"
+    die "ANDROID_KEYSTORE_BASE64 is not valid base64." "ANDROID_SETUP.md#step-4-signing-secrets"
   fi
 
   if command -v keytool >/dev/null 2>&1; then
     if ! keytool -list -keystore "$keystore" -storepass:env ANDROID_KEYSTORE_PASSWORD -alias "$ANDROID_KEY_ALIAS" >/dev/null 2>&1; then
       rm -f "$keystore"
-      die "The keystore could not be opened with ANDROID_KEYSTORE_PASSWORD, or it has no alias ANDROID_KEY_ALIAS." "SECRETS.md#android-signing"
+      die "The keystore could not be opened with ANDROID_KEYSTORE_PASSWORD, or it has no alias ANDROID_KEY_ALIAS." "ANDROID_SETUP.md#step-4-signing-secrets"
     fi
   fi
 

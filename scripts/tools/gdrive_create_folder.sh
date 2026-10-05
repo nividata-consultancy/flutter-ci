@@ -44,7 +44,7 @@ ask() {
 ask GDRIVE_OAUTH_CLIENT_ID "OAuth client ID (shown; ends with .apps.googleusercontent.com)" false
 if [[ "$GDRIVE_OAUTH_CLIENT_ID" != *.apps.googleusercontent.com ]]; then
   die "That is not an OAuth client ID: it must end with .apps.googleusercontent.com. Copy it from Google Cloud → APIs & Services → Credentials → OAuth 2.0 Client IDs." \
-    "SECRETS.md#option-b-your-own-google-account-my-drive"
+    "ANDROID_SETUP.md#option-2-your-own-google-account"
 fi
 ask GDRIVE_OAUTH_CLIENT_SECRET "OAuth client secret (hidden)" true
 ask GDRIVE_OAUTH_REFRESH_TOKEN "Refresh token (hidden)" true
@@ -58,7 +58,7 @@ resp="$(curl -sS -X POST "https://www.googleapis.com/drive/v3/files?fields=id,we
 id="$(printf '%s' "$resp" | yq -p json -oy e '.id // ""' -)"
 if [[ -z "$id" ]]; then
   die "Could not create the folder: $(printf '%s' "$resp" | yq -p json -oy e '.error.message // "unknown error"' -)" \
-    "SECRETS.md#option-b-your-own-google-account-my-drive"
+    "ANDROID_SETUP.md#option-2-your-own-google-account"
 fi
 
 cat <<OUT

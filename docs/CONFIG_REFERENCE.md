@@ -141,7 +141,7 @@ destinations:
 |---|---|---|
 | `playstore` | `enabled`, `tracks` (**required**, see below), `status` (`completed` by default; `draft` while the app has never been published) | Uploads the AAB and `mapping.txt`. Release name `[UAT] 1.4.0-beta.1 (N)`. No release notes. Needs `app.android_package_name`. |
 | `firebase` | `enabled`, `groups` (comma-separated group aliases), `testers` (comma-separated emails) | Uploads the APK if built, otherwise the AAB (an AAB only works if the Firebase project is linked to Play). Release notes = tag message. |
-| `drive` | `enabled`, `folder_id` (**required** when enabled, from the folder URL) | Uploads the APK and AAB. See [SECRETS.md → Google Drive](SECRETS.md#google-drive) for the two ways to give access. |
+| `drive` | `enabled`, `folder_id` (**required** when enabled, from the folder URL) | Uploads the APK and AAB. See [ANDROID_SETUP.md → Google Drive](ANDROID_SETUP.md#5c-google-drive) for the two ways to give access. |
 
 ### Play tracks
 
@@ -164,7 +164,7 @@ iOS builds go to **TestFlight only**, through the Xcode Cloud workflow. A
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `enabled` | bool | `true` | See [Platform switches](#platform-switches) |
-| `display_name` | string | none | Optional app name for this environment. Needs the [one-time Xcode setup](XCODE_CLOUD_SETUP.md#optional-different-name-and-icon-for-uat). |
+| `display_name` | string | none | Optional app name for this environment. Needs the [one-time Xcode setup](IOS_SETUP.md#optional-different-name-and-icon-for-uat). |
 | `app_icon` | string | none | Optional icon set, e.g. `AppIcon-UAT`. Same one-time setup. |
 | `google_service_info` | path | none | Copied to `ios/Runner/GoogleService-Info.plist` |
 | `build_settings` | map | none | Extra Xcode build settings (`KEY: value`) for this environment. Same one-time setup. |

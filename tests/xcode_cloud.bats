@@ -31,7 +31,7 @@ teardown() { teardown_tmp; }
   unset CI_TAG
   run "$XC/post_clone.sh"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"ERROR: CI_TAG is not set"*"XCODE_CLOUD_SETUP.md#4-create-the-workflow"* ]]
+  [[ "$output" == *"ERROR: CI_TAG is not set"*"IOS_SETUP.md#step-5-create-the-xcode-cloud-workflow"* ]]
 }
 
 @test "post_xcodebuild: no-op unless archive" {

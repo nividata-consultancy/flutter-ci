@@ -10,7 +10,7 @@ Most end with a link to a section on this page. After fixing, always push a **ne
 | GitHub: "Invalid workflow file … secret X is not defined in the referenced workflow" | The app passes a secret that the flutter-ci version it uses doesn't know yet. Check that `@v1` is up to date, or remove that line from the app's `release.yml`. |
 | GitHub: a failed run on every push | Usually an invalid workflow file (see above). GitHub then can't read the triggers. flutter-ci's template only starts on tags. |
 | GitHub: a run on a commit | Another workflow file in the app's `.github/workflows/` starts on push. flutter-ci runs show the **tag** as their branch. |
-| Xcode Cloud: a build on every commit | The workflow still has **Branch Changes**, or a leftover **Default** workflow exists. Remove them ([XCODE_CLOUD_SETUP.md](XCODE_CLOUD_SETUP.md#4-create-the-workflow)). |
+| Xcode Cloud: a build on every commit | The workflow still has **Branch Changes**, or a leftover **Default** workflow exists. Remove them ([IOS_SETUP.md](IOS_SETUP.md#step-5-create-the-xcode-cloud-workflow)). |
 | Xcode Cloud: nothing starts on a tag | The tag was pushed before the workflow existed, or the start condition isn't **Tag Changes → beginning with `v`**. Push a new tag. |
 | Xcode Cloud: `CI_TAG is not set` | Someone started a build from a branch. Only tags work. |
 
@@ -34,7 +34,7 @@ Xcode Cloud: the scripts don't run, or you see `zsh` errors, `permission denied`
 | Problem | Fix |
 |---|---|
 | No "Xcode Cloud" in the Product menu | It's under **Integrate → Create Workflow…** |
-| Xcode shows the wrong GitHub URL (e.g. `github.com-work`) | Use the normal URL for `origin` ([XCODE_CLOUD_SETUP.md](XCODE_CLOUD_SETUP.md#2-use-the-normal-github-url-for-origin)) |
+| Xcode shows the wrong GitHub URL (e.g. `github.com-work`) | Use the normal URL for `origin` ([IOS_SETUP.md](IOS_SETUP.md#step-3-fix-the-github-address)) |
 | "Scheme Runner does not exist" | Share the Runner scheme and commit `ios/Runner.xcodeproj/xcshareddata` |
 | No group in TestFlight Internal Testing | Create one in App Store Connect → TestFlight → Internal Testing → + |
 | Signing error during Archive | Runner target → Signing & Capabilities: automatic signing on, Team set |
@@ -64,14 +64,14 @@ GitHub's runners and installed automatically on Xcode Cloud. On your Mac, run
 
 ## Android build fails
 
-- `Missing signing secrets`: add the four `ANDROID_*` secrets ([SECRETS.md](SECRETS.md#android-signing)).
+- `Missing signing secrets`: add the four `ANDROID_*` secrets ([ANDROID_SETUP.md](ANDROID_SETUP.md#step-4-signing-secrets)).
 - `The keystore could not be opened`: wrong password or alias, or the base64 value is
   incomplete. Set `ANDROID_KEYSTORE_BASE64` again with `base64 -i file.jks | gh secret set …`.
 - `No android/ directory`: the app isn't at the repo root. Set `app-directory` in the
   app's `release.yml`.
 - `Flavor … not found`: `android.flavor` must match `productFlavors`, or be removed.
 - The build is signed with debug keys: the Gradle file doesn't read `key.properties`
-  ([NEW_PROJECT_SETUP.md](NEW_PROJECT_SETUP.md#3-android-signing-in-gradle)).
+  ([ANDROID_SETUP.md](ANDROID_SETUP.md#step-3-signing-in-gradle)).
 
 ## versionCode already used
 
@@ -101,7 +101,7 @@ the first release is out. Each build then waits as a draft in Play Console.
 ## Play production draft fails
 
 - `HTTP 403`: the Play service account needs the "Release to production…" permission
-  ([SECRETS.md](SECRETS.md#google-play)).
+  ([ANDROID_SETUP.md](ANDROID_SETUP.md#5a-play-store)).
 - `HTTP 400 / 409`: another draft or a release under review blocks it. Finish or
   discard it in Play Console → Production.
 - Not possible on a **draft app** (never published). Use `tracks: [internal]` until the
@@ -127,7 +127,7 @@ is a connection problem. The message includes curl's own error:
 
 Other `Drive: upload failed (HTTP …)` errors include Google's reason:
 - `401` / `invalid_grant`: the refresh token expired or was removed, or the consent
-  screen is still in "Testing". Make a new token ([SECRETS.md](SECRETS.md#option-b-your-own-google-account-my-drive)).
+  screen is still in "Testing". Make a new token ([ANDROID_SETUP.md](ANDROID_SETUP.md#option-2-your-own-google-account)).
 - `403 … has not been used in project`: enable the **Google Drive API** in that Cloud project.
 
 Errors from the folder helper (`gdrive_create_folder.sh`):
@@ -139,8 +139,8 @@ Errors from the folder helper (`gdrive_create_folder.sh`):
 
 ## Drive: storage quota exceeded
 
-- **Service account (Option A):** the folder must be inside a **Shared Drive**. A My Drive
-  folder doesn't work, even when shared. Without Google Workspace, use Option B.
-- **Own account (Option B):** that account's Drive is full.
-- `notFound` (Option B): the folder was made by hand. Create it with
+- **Service account (Option 1):** the folder must be inside a **Shared Drive**. A My Drive
+  folder doesn't work, even when shared. Without Google Workspace, use Option 2.
+- **Own account (Option 2):** that account's Drive is full.
+- `notFound` (Option 2): the folder was made by hand. Create it with
   `scripts/tools/gdrive_create_folder.sh`, then use the printed `folder_id`.

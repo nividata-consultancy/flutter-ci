@@ -18,14 +18,14 @@ tag=""
 if [[ -n "${TAG_OVERRIDE:-}" ]]; then
   if [[ "${DRY_RUN:-false}" != "true" ]]; then
     die "The 'tag' input is only allowed together with dry-run: true. Real builds are triggered by pushing a tag." \
-      "TAGGING_AND_RELEASES.md#tag-format"
+      "RELEASES.md#tag-format"
   fi
   tag="$TAG_OVERRIDE"
 elif [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
   tag="$GITHUB_REF_NAME"
 else
   die "This workflow must be triggered by pushing a tag (got ref '${GITHUB_REF:-?}'). Check 'on: push: tags' in .github/workflows/release.yml." \
-    "TAGGING_AND_RELEASES.md#tag-format"
+    "RELEASES.md#tag-format"
 fi
 
 resolve_context . "${CONFIG_PATH:-.ci/config.yaml}" "$tag" android || exit 1

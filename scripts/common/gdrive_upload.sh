@@ -26,12 +26,12 @@ gdrive_upload() {
   tmp="$(ci_temp_dir)"
   if [[ -n "${GDRIVE_OAUTH_REFRESH_TOKEN:-}" ]]; then
     [[ -n "${GDRIVE_OAUTH_CLIENT_ID:-}" && -n "${GDRIVE_OAUTH_CLIENT_SECRET:-}" ]] \
-      || { log_error "Drive: GDRIVE_OAUTH_REFRESH_TOKEN is set, but GDRIVE_OAUTH_CLIENT_ID / GDRIVE_OAUTH_CLIENT_SECRET are missing." "SECRETS.md#option-b-your-own-google-account-my-drive"; return 1; }
+      || { log_error "Drive: GDRIVE_OAUTH_REFRESH_TOKEN is set, but GDRIVE_OAUTH_CLIENT_ID / GDRIVE_OAUTH_CLIENT_SECRET are missing." "ANDROID_SETUP.md#option-2-your-own-google-account"; return 1; }
     log_info "Drive: uploading as your Google account (OAuth refresh token)."
     token="$(google_access_token_from_refresh "$GDRIVE_OAUTH_CLIENT_ID" "$GDRIVE_OAUTH_CLIENT_SECRET" "$GDRIVE_OAUTH_REFRESH_TOKEN")" || return 1
   else
     sa_json="$(secret_from_env GDRIVE_SERVICE_ACCOUNT_JSON)"
-    [[ -n "$sa_json" ]] || { log_error "Drive: no credentials. Set GDRIVE_OAUTH_CLIENT_ID + GDRIVE_OAUTH_CLIENT_SECRET + GDRIVE_OAUTH_REFRESH_TOKEN (your own account), or GDRIVE_SERVICE_ACCOUNT_JSON (Shared Drive)." "SECRETS.md#google-drive"; return 1; }
+    [[ -n "$sa_json" ]] || { log_error "Drive: no credentials. Set GDRIVE_OAUTH_CLIENT_ID + GDRIVE_OAUTH_CLIENT_SECRET + GDRIVE_OAUTH_REFRESH_TOKEN (your own account), or GDRIVE_SERVICE_ACCOUNT_JSON (Shared Drive)." "ANDROID_SETUP.md#5c-google-drive"; return 1; }
     sa="$tmp/gdrive-sa.json"
     printf '%s' "$sa_json" | write_secret_file "$sa"
     token="$(google_access_token "$sa" https://www.googleapis.com/auth/drive)" || { rm -f "$sa"; return 1; }
