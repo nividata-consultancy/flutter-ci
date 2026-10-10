@@ -19,7 +19,7 @@ app:
   name: MyApp
   flutter_version_file: .fvmrc
   java_version: "17"
-  run_tests: true
+  run_tests: false
   run_analyze: false
   android_package_name: com.example.myapp
 
@@ -59,8 +59,8 @@ environments:
 | `flutter_version_file` | `.fvmrc` \| `pubspec.yaml` | auto | Where the Flutter version is pinned. See [Flutter version](#flutter-version). |
 | `java_version` | string/number | `"17"` | Java used by Gradle on GitHub. Use the same major version as your Mac: `flutter doctor -v` → Android toolchain → Java version (e.g. `21.0.10` → `"21"`). |
 | `prod_branches` | list | none | Optional prod guard: prod tags must be on one of these branches. Without it, prod tags work on any branch. |
-| `run_tests` | bool | `true` | Run `flutter test` (if `test/` exists) before the Android build |
-| `run_analyze` | bool | `false` | Run `flutter analyze` before the Android build |
+| `run_tests` | bool | `false` | `true` runs `flutter test` (if `test/` exists) before the Android build. A failing test stops the build. |
+| `run_analyze` | bool | `false` | `true` runs `flutter analyze` before the Android build. Any issue, even a lint hint, stops the build. |
 | `android_package_name` | string | — | `applicationId`. Required when Play is enabled. |
 | `github_release.enabled` | bool | `true` | Create a GitHub Release on the app repo for each tag (prerelease for UAT) |
 | `github_release.attach_artifacts` | bool | `false` | Attach the APK to that release |

@@ -45,7 +45,7 @@ Open `.ci/config.yaml` and change only these:
 | `app.java_version` | The Java version your Mac builds with. Run `flutter doctor -v` and look under **Android toolchain** → **Java version**, e.g. `OpenJDK … (build 21.0.10…)` means `"21"`. Keep the quotes. |
 | `app.android_package_name` | Your applicationId: `grep applicationId android/app/build.gradle*` |
 | `version:` in **pubspec.yaml** (not in the config) | `X.Y.Z+N`, e.g. `version: 1.0.0+101`. The build number `N` must be **higher** than every version code already on Play (Play Console → App bundle explorer). |
-| `app.run_tests` | `false` if the app has no working tests |
+| `app.run_tests` / `app.run_analyze` | Both `false` by default. Set `true` only if `flutter test` passes / `flutter analyze` says "No issues found!". A failure stops the build. |
 | `dart_define_file` | Uncomment it if you have `env/uat.json` / `env/prod.json` |
 | `android.flavor` | Only if your Gradle file has `productFlavors` |
 

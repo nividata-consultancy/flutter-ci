@@ -94,7 +94,7 @@ resolve_context() {
   branches="$(cfg_list '.app.prod_branches' | tr '\n' ' ' | sed 's/ *$//')"
   # Empty = prod tags may be on any branch (no prod guard).
   _ctx PROD_BRANCHES "$branches"
-  _ctx RUN_TESTS "$(cfg '.app.run_tests' true)"
+  _ctx RUN_TESTS "$(cfg '.app.run_tests' false)"
   _ctx RUN_ANALYZE "$(cfg '.app.run_analyze' false)"
   _ctx DART_DEFINE_FILE "$(cfg "$e.dart_define_file")"
 

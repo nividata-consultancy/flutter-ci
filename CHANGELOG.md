@@ -6,6 +6,10 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+### Changed
+- `app.run_tests` now defaults to `false` (like `run_analyze`). Set it to `true`
+  to run `flutter test` before the Android build.
+
 ### Removed
 - `app.obfuscate`: builds are no longer obfuscated (iOS symbols were never kept,
   and obfuscated crash reports were unreadable without manual steps). An existing
