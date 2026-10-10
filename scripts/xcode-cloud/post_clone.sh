@@ -134,9 +134,6 @@ main() {
     "--build-name=$APP_VERSION" "--build-number=$build_number")
   [[ -n "$defines" ]] && args+=("--dart-define-from-file=$defines")
   [[ -n "$IOS_TARGET" ]] && args+=(--target "$IOS_TARGET")
-  if [[ "$OBFUSCATE" == "true" ]]; then
-    args+=(--obfuscate "--split-debug-info=$APP_ROOT/build/flutter-ci-debug-info")
-  fi
   log_step "flutter ${args[*]}"
   flutter "${args[@]}"
 

@@ -2,19 +2,18 @@
 # Build the Android AAB and/or APK (run from the app root).
 #
 # Env (from resolve.sh outputs): ARTIFACTS ("aab apk"), FLAVOR, TARGET,
-#   DART_DEFINE_PATH, BUILD_NAME, BUILD_NUMBER, OBFUSCATE, APP_NAME,
+#   DART_DEFINE_PATH, BUILD_NAME, BUILD_NUMBER, APP_NAME,
 #   ENVIRONMENT
 # Optional: FLUTTER_CI_PRINT_ARGS=1 prints the flutter args and exits (tests).
 #
 # Copies outputs to build/flutter-ci-artifacts/ and writes AAB_PATH,
-# APK_PATH, MAPPING_PATH, SYMBOLS_PATH, ARTIFACTS_DIR to $GITHUB_OUTPUT.
+# APK_PATH, MAPPING_PATH, ARTIFACTS_DIR to $GITHUB_OUTPUT.
 set -euo pipefail
 
 _DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/common/util.sh
 source "$_DIR/../common/util.sh"
 
-DEBUG_INFO_DIR="build/flutter-ci-debug-info"
 OUT_DIR="build/flutter-ci-artifacts"
 
 # flutter_args — shared args for every `flutter build` (one per line).
@@ -24,9 +23,6 @@ flutter_args() {
   [[ -n "${TARGET:-}" ]] && printf '%s\n' --target "$TARGET"
   [[ -n "${DART_DEFINE_PATH:-}" ]] && printf '%s\n' "--dart-define-from-file=$DART_DEFINE_PATH"
   printf '%s\n' "--build-name=${BUILD_NAME:?BUILD_NAME not set}" "--build-number=${BUILD_NUMBER:?BUILD_NUMBER not set}"
-  if [[ "${OBFUSCATE:-false}" == "true" ]]; then
-    printf '%s\n' --obfuscate "--split-debug-info=$DEBUG_INFO_DIR"
-  fi
 }
 
 # _newest <dir> <pattern> — newest matching file newer than the build marker.
@@ -51,7 +47,7 @@ main() {
 
   local base
   base="$(slugify "${APP_NAME:-app}")-${ENVIRONMENT:-env}-${BUILD_NAME}-${BUILD_NUMBER}"
-  local aab="" apk="" mapping="" symbols="" kind
+  local aab="" apk="" mapping="" kind
   for kind in ${ARTIFACTS:-aab}; do
     case "$kind" in
       aab)
@@ -88,17 +84,12 @@ main() {
     mapping="$OUT_DIR/$base-mapping.txt"
     cp "$map_src" "$mapping"
   fi
-  if [[ "${OBFUSCATE:-false}" == "true" && -d "$DEBUG_INFO_DIR" ]]; then
-    symbols="$OUT_DIR/$base-debug-symbols.zip"
-    (cd "$DEBUG_INFO_DIR" && zip -qr "$OLDPWD/$symbols" .)
-  fi
 
   log_info "Artifacts:"
   ls -l "$OUT_DIR" >&2
   set_output AAB_PATH "$aab"
   set_output APK_PATH "$apk"
   set_output MAPPING_PATH "$mapping"
-  set_output SYMBOLS_PATH "$symbols"
   set_output ARTIFACTS_DIR "$OUT_DIR"
   set_output ARTIFACT_BASENAME "$base"
 }

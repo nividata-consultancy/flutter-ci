@@ -229,7 +229,6 @@ jobs:
           DART_DEFINE_PATH: ${{ steps.defines.outputs.path }}
           BUILD_NAME: ${{ steps.ctx.outputs.APP_VERSION }}
           BUILD_NUMBER: ${{ steps.ctx.outputs.BUILD_NUMBER }}
-          OBFUSCATE: ${{ steps.ctx.outputs.OBFUSCATE }}
           APP_NAME: ${{ steps.ctx.outputs.APP_NAME }}
           ENVIRONMENT: ${{ steps.ctx.outputs.ENVIRONMENT }}
         run: '"$FLUTTER_CI/scripts/android/build.sh"'
@@ -239,9 +238,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ steps.build.outputs.ARTIFACT_BASENAME }}
-          path: |
-            ${{ inputs.app-directory }}/${{ steps.build.outputs.APK_PATH }}
-            ${{ steps.build.outputs.SYMBOLS_PATH != '' && format('{0}/{1}', inputs.app-directory, steps.build.outputs.SYMBOLS_PATH) || '' }}
+          path: ${{ inputs.app-directory }}/${{ steps.build.outputs.APK_PATH }}
           if-no-files-found: error
 
       - name: Release notes for Firebase (tag message, else commits)

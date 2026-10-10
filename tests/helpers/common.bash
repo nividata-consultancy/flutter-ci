@@ -25,7 +25,6 @@ app:
   build_number_offset: 100
   run_tests: true
   run_analyze: false
-  obfuscate: false
   android_package_name: com.example.myapp
 environments:
   uat:

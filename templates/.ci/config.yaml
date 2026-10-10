@@ -8,7 +8,6 @@ app:
   # prod_branches: [main]             # optional: only allow prod tags on these branches
   run_tests: true
   run_analyze: false
-  obfuscate: false                    # --obfuscate --split-debug-info
   android_package_name: com.example.myapp   # needed for the playstore destination
   # github_release: { enabled: true, attach_artifacts: false }
 

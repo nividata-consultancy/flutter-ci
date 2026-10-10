@@ -6,7 +6,6 @@ app:
   java_version: "17"
   run_tests: true
   run_analyze: true
-  obfuscate: true
   android_package_name: com.example.flutter_ci_example
 
 environments:

@@ -6,6 +6,11 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+### Removed
+- `app.obfuscate`: builds are no longer obfuscated (iOS symbols were never kept,
+  and obfuscated crash reports were unreadable without manual steps). An existing
+  `obfuscate:` line is ignored with a warning.
+
 ## [1.3.0] - 2026-10-10
 
 ### Changed

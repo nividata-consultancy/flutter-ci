@@ -96,7 +96,6 @@ resolve_context() {
   _ctx PROD_BRANCHES "$branches"
   _ctx RUN_TESTS "$(cfg '.app.run_tests' true)"
   _ctx RUN_ANALYZE "$(cfg '.app.run_analyze' false)"
-  _ctx OBFUSCATE "$(cfg '.app.obfuscate' false)"
   _ctx DART_DEFINE_FILE "$(cfg "$e.dart_define_file")"
 
   if [[ "$platform" == "android" ]]; then

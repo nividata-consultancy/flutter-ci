@@ -306,7 +306,10 @@ validate_config() {
         _CFG_WARNINGS+=("app.build_number_offset is no longer used and is ignored (the build number comes from 'version: X.Y.Z+N' in pubspec.yaml). You can delete this line")
       fi
       local flag
-      for flag in run_tests run_analyze obfuscate; do
+      if cfg_has '.app.obfuscate'; then
+        _CFG_WARNINGS+=("app.obfuscate is no longer supported and is ignored (builds are not obfuscated). You can delete this line")
+      fi
+      for flag in run_tests run_analyze; do
         _cfg_expect_type ".app.$flag" "app.$flag" '!!bool' || true
       done
       if _cfg_expect_type '.app.android_package_name' 'app.android_package_name' '!!str'; then

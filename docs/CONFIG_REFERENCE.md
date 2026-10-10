@@ -21,7 +21,6 @@ app:
   java_version: "17"
   run_tests: true
   run_analyze: false
-  obfuscate: false
   android_package_name: com.example.myapp
 
 environments:
@@ -62,7 +61,6 @@ environments:
 | `prod_branches` | list | none | Optional prod guard: prod tags must be on one of these branches. Without it, prod tags work on any branch. |
 | `run_tests` | bool | `true` | Run `flutter test` (if `test/` exists) before the Android build |
 | `run_analyze` | bool | `false` | Run `flutter analyze` before the Android build |
-| `obfuscate` | bool | `false` | `--obfuscate --split-debug-info` (the symbols are kept with the Android build files) |
 | `android_package_name` | string | — | `applicationId`. Required when Play is enabled. |
 | `github_release.enabled` | bool | `true` | Create a GitHub Release on the app repo for each tag (prerelease for UAT) |
 | `github_release.attach_artifacts` | bool | `false` | Attach the APK to that release |

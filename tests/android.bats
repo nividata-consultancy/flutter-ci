@@ -15,8 +15,8 @@ teardown() { teardown_tmp; }
   [[ "$output" != *"--obfuscate"* ]]
 }
 
-@test "build args with flavor, target, defines and obfuscation" {
-  FLAVOR=uat TARGET=lib/main_uat.dart DART_DEFINE_PATH=/tmp/d.json OBFUSCATE=true \
+@test "build args with flavor, target and defines" {
+  FLAVOR=uat TARGET=lib/main_uat.dart DART_DEFINE_PATH=/tmp/d.json \
     BUILD_NAME=1.4.0 BUILD_NUMBER=1 FLUTTER_CI_PRINT_ARGS=1 run "$ANDROID/build.sh"
   [ "$status" -eq 0 ]
   [ "${lines[0]}" = "--release" ]
@@ -25,7 +25,7 @@ teardown() { teardown_tmp; }
   [ "${lines[3]}" = "--target" ]
   [ "${lines[4]}" = "lib/main_uat.dart" ]
   [[ "$output" == *"--dart-define-from-file=/tmp/d.json"* ]]
-  [[ "$output" == *"--obfuscate"*"--split-debug-info=build/flutter-ci-debug-info"* ]]
+  [[ "$output" != *"--obfuscate"* ]]
 }
 
 @test "resolve: version and build number come from pubspec" {

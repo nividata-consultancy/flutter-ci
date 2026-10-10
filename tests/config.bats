@@ -133,7 +133,7 @@ set_yq() { yq -i e "$1" "$CFG"; }
 }
 
 @test "get returns false booleans and empty for missing" {
-  run "$SCRIPTS/read_config.sh" get "$CFG" '.app.obfuscate'
+  run "$SCRIPTS/read_config.sh" get "$CFG" '.app.run_analyze'
   [ "$output" = "false" ]
   run "$SCRIPTS/read_config.sh" get "$CFG" '.app.missing'
   [ "$output" = "" ]
