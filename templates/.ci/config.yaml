@@ -4,7 +4,7 @@ version: 1
 app:
   name: MyApp                         # used in artifact names and notifications
   flutter_version_file: .fvmrc        # .fvmrc ({"flutter": "X.Y.Z"}) or pubspec.yaml (environment.flutter)
-  java_version: "17"
+  java_version: "17"                  # same as your Mac: `flutter doctor -v` → Android toolchain → Java version
   # prod_branches: [main]             # optional: only allow prod tags on these branches
   build_number_offset: 0              # Android versionCode = run number + offset
   run_tests: true

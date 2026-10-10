@@ -59,7 +59,7 @@ environments:
 |---|---|---|---|
 | `name` | string | **required** | Short app name, used in file names, release names and messages |
 | `flutter_version_file` | `.fvmrc` \| `pubspec.yaml` | auto | Where the Flutter version is pinned. See [Flutter version](#flutter-version). |
-| `java_version` | string/number | `"17"` | JDK for Gradle |
+| `java_version` | string/number | `"17"` | Java used by Gradle on GitHub. Use the same major version as your Mac: `flutter doctor -v` → Android toolchain → Java version (e.g. `21.0.10` → `"21"`). |
 | `prod_branches` | list | none | Optional prod guard: prod tags must be on one of these branches. Without it, prod tags work on any branch. |
 | `build_number_offset` | number ≥ 0 | `0` | Android versionCode = GitHub run number + offset. Set it higher than the highest version code already on Play. |
 | `run_tests` | bool | `true` | Run `flutter test` (if `test/` exists) before the Android build |

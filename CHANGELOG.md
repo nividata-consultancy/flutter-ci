@@ -6,6 +6,10 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+### Changed
+- Docs: how to pick `java_version` (same as `flutter doctor -v` shows) and a
+  reminder to commit `.fvmrc`.
+
 ## [1.2.1] - 2026-10-05
 
 ### Changed

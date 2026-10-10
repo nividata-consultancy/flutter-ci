@@ -41,6 +41,8 @@ Open `.ci/config.yaml` and change only these:
 | Key | Set to |
 |---|---|
 | `app.name` | Short name without spaces, e.g. `MathRiddle` |
+| `app.flutter_version_file` | Keep `.fvmrc` (from Step 1). Make sure `.fvmrc` is committed to git. |
+| `app.java_version` | The Java version your Mac builds with. Run `flutter doctor -v` and look under **Android toolchain** → **Java version**, e.g. `OpenJDK … (build 21.0.10…)` means `"21"`. Keep the quotes. |
 | `app.android_package_name` | Your applicationId: `grep applicationId android/app/build.gradle*` |
 | `app.build_number_offset` | If the app is already on Play: a number **higher** than the highest version code in Play Console → App bundle explorer (e.g. `100`). Otherwise `0`. |
 | `app.run_tests` | `false` if the app has no working tests |
