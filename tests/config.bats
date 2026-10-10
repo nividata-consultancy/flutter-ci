@@ -61,11 +61,10 @@ set_yq() { yq -i e "$1" "$CFG"; }
 }
 
 @test "reports all errors at once" {
-  set_yq '.app.run_tests = "yes" | .app.build_number_offset = -3 | .app.java_version = "seventeen" | .app.tyop = 1'
+  set_yq '.app.run_tests = "yes" | .app.java_version = "seventeen" | .app.tyop = 1'
   run "$SCRIPTS/read_config.sh" validate "$CFG"
   [ "$status" -eq 1 ]
   [[ "$output" == *"app.run_tests must be true/false"* ]]
-  [[ "$output" == *"build_number_offset must be 0 or a positive integer"* ]]
   [[ "$output" == *"java_version must be a major version"* ]]
   [[ "$output" == *"unknown key 'tyop'"* ]]
   [[ "$output" == *"CONFIG_REFERENCE.md"* ]]
@@ -142,6 +141,7 @@ set_yq() { yq -i e "$1" "$CFG"; }
 
 @test "context resolves android values" {
   printf '{"flutter": "3.24.5"}\n' >"$TMP/.fvmrc"
+  printf 'name: x\nversion: 1.2.3+7\n' >"$TMP/pubspec.yaml"
   run "$SCRIPTS/context.sh" "$TMP" .ci/config.yaml v1.2.3-beta.4 android
   [ "$status" -eq 0 ]
   [[ "$output" == *"ENVIRONMENT=uat"* ]]
@@ -149,7 +149,8 @@ set_yq() { yq -i e "$1" "$CFG"; }
   [[ "$output" == *"FLUTTER_VERSION=3.24.5"* ]]
   [[ "$output" == *"ANDROID_FLAVOR=uat"* ]]
   [[ "$output" == *"ANDROID_ARTIFACTS=aab\ apk"* ]]
-  [[ "$output" == *"BUILD_NUMBER_OFFSET=100"* ]]
+  [[ "$output" == *"APP_VERSION=1.2.3"* ]]
+  [[ "$output" == *"BUILD_NUMBER=7"* ]]
   [[ "$output" == *"PLAYSTORE_ENABLED=true"* ]]
   [[ "$output" == *"PLAYSTORE_TESTING_TRACK=internal"* ]]
   [[ "$output" == *"PLAYSTORE_PRODUCTION=false"* ]]
@@ -159,6 +160,7 @@ set_yq() { yq -i e "$1" "$CFG"; }
 
 @test "context resolves ios values and is sourceable" {
   printf '{"flutter": "3.24.5"}\n' >"$TMP/.fvmrc"
+  printf 'name: x\nversion: 1.2.3+7\n' >"$TMP/pubspec.yaml"
   "$SCRIPTS/context.sh" "$TMP" .ci/config.yaml v1.2.3-beta.4 ios >"$TMP/ctx.env"
   source "$TMP/ctx.env"
   [ "$IOS_DISPLAY_NAME" = "MyApp UAT" ]
@@ -168,6 +170,7 @@ set_yq() { yq -i e "$1" "$CFG"; }
 
 @test "context writes GITHUB_OUTPUT" {
   printf '{"flutter": "3.24.5"}\n' >"$TMP/.fvmrc"
+  printf 'name: x\nversion: 1.2.3+7\n' >"$TMP/pubspec.yaml"
   GITHUB_OUTPUT="$TMP/out" run "$SCRIPTS/context.sh" "$TMP" .ci/config.yaml v1.2.3 android
   [ "$status" -eq 0 ]
   grep -qx 'ENVIRONMENT=prod' "$TMP/out"

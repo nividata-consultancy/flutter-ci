@@ -2,7 +2,7 @@
 # Write the GitHub job summary and send the optional Slack notification.
 # Never fails the job.
 #
-# Env: STATUS (job.status), ENVIRONMENT, ENV_LABEL, TAG, VERSION_NAME_FULL,
+# Env: STATUS (job.status), ENVIRONMENT, ENV_LABEL, TAG, APP_VERSION,
 #   BUILD_NUMBER, DRY_RUN, APP_NAME, DESTINATIONS (newline list of
 #   "name|result|link"), RUN_URL, SLACK_WEBHOOK_URL
 set -uo pipefail
@@ -15,7 +15,7 @@ status="${STATUS:-unknown}"
 icon="✅"
 [[ "$status" == "success" ]] || icon="❌"
 label="${ENV_LABEL:-?}"
-version="${VERSION_NAME_FULL:-?}"
+version="${APP_VERSION:-?}"
 app="${APP_NAME:-app}"
 
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
@@ -24,7 +24,7 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     printf '| | |\n|---|---|\n'
     printf '| Status | %s |\n' "$status"
     printf '| Environment | %s |\n' "${ENVIRONMENT:-?}"
-    printf '| Version name | %s |\n' "$version"
+    printf '| Version (pubspec.yaml) | %s |\n' "$version"
     printf '| Build number (versionCode) | %s |\n' "${BUILD_NUMBER:-?}"
     printf '| Dry run | %s |\n' "${DRY_RUN:-false}"
     if [[ -n "${DESTINATIONS:-}" ]]; then

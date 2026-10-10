@@ -95,10 +95,10 @@ on:
         description: uat | prod
         value: ${{ jobs.android.outputs.environment }}
       version-name:
-        description: versionName used for the build
+        description: versionName (from pubspec.yaml)
         value: ${{ jobs.android.outputs.version-name }}
       build-number:
-        description: versionCode used for the build
+        description: versionCode (from pubspec.yaml)
         value: ${{ jobs.android.outputs.build-number }}
 
 permissions:
@@ -122,7 +122,7 @@ jobs:
       FLUTTER_CI: ${{ github.workspace }}/.flutter-ci
     outputs:
       environment: ${{ steps.ctx.outputs.ENVIRONMENT }}
-      version-name: ${{ steps.ctx.outputs.VERSION_NAME_FULL }}
+      version-name: ${{ steps.ctx.outputs.APP_VERSION }}
       build-number: ${{ steps.ctx.outputs.BUILD_NUMBER }}
 
     steps:
@@ -227,7 +227,7 @@ jobs:
           FLAVOR: ${{ steps.ctx.outputs.ANDROID_FLAVOR }}
           TARGET: ${{ steps.ctx.outputs.ANDROID_TARGET }}
           DART_DEFINE_PATH: ${{ steps.defines.outputs.path }}
-          BUILD_NAME: ${{ steps.ctx.outputs.VERSION_NAME_FULL }}
+          BUILD_NAME: ${{ steps.ctx.outputs.APP_VERSION }}
           BUILD_NUMBER: ${{ steps.ctx.outputs.BUILD_NUMBER }}
           OBFUSCATE: ${{ steps.ctx.outputs.OBFUSCATE }}
           APP_NAME: ${{ steps.ctx.outputs.APP_NAME }}

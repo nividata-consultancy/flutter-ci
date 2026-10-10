@@ -4,7 +4,6 @@ app:
   name: FlutterCIExample
   flutter_version_file: .fvmrc
   java_version: "17"
-  build_number_offset: 0
   run_tests: true
   run_analyze: true
   obfuscate: true

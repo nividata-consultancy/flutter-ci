@@ -302,9 +302,8 @@ validate_config() {
           [[ "$b" =~ ^[A-Za-z0-9._/-]+$ ]] || _cfg_err "app.prod_branches: '$b' is not a valid branch name"
         done < <(cfg_list '.app.prod_branches')
       fi
-      if _cfg_expect_type '.app.build_number_offset' 'app.build_number_offset' '!!int'; then
-        [[ "$(cfg '.app.build_number_offset')" =~ ^[0-9]+$ ]] \
-          || _cfg_err "app.build_number_offset must be 0 or a positive integer"
+      if cfg_has '.app.build_number_offset'; then
+        _CFG_WARNINGS+=("app.build_number_offset is no longer used and is ignored (the build number comes from 'version: X.Y.Z+N' in pubspec.yaml). You can delete this line")
       fi
       local flag
       for flag in run_tests run_analyze obfuscate; do

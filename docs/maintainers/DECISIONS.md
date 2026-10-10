@@ -9,7 +9,7 @@ Last checked: **2026-10-05**.
 |---|---|---|
 | `secrets: inherit` | Only works when the caller and the reusable workflow are in the same organization or enterprise. Our apps live in different orgs, so every secret is passed by name. | [GitHub: reusing workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows) |
 | Reusable workflows across orgs | A repo in another org can call a public reusable workflow if its Actions policy allows it. A new secret in the caller that the called version doesn't declare makes the caller's workflow file **invalid**. | GitHub docs; seen in practice (v1.1.0 rollout) |
-| `--build-name 1.4.0-beta.1` | Android keeps it unchanged (an APK showed `versionName='0.1.0-beta.1'`). iOS strips non-digits (it would become `1.4.0.1`, which Apple rejects), so flutter-ci passes `X.Y.Z` on iOS. | `flutter_tools/lib/src/build_info.dart`, local build |
+| `--build-name 1.4.0-beta.1` | Android keeps it unchanged; iOS strips non-digits (`1.4.0.1`, which Apple rejects). Since v1.3.0 both platforms use the plain `X.Y.Z` from pubspec. | `flutter_tools/lib/src/build_info.dart`, local build |
 | Xcode Cloud variables | `CI_TAG` (only for tag start conditions), `CI_BUILD_NUMBER`, `CI_COMMIT`, `CI_PRIMARY_REPOSITORY_PATH`, `CI_XCODEBUILD_ACTION` | [Environment variable reference](https://developer.apple.com/documentation/xcode/environment-variable-reference) |
 | Xcode Cloud scripts | Only `ci_post_clone.sh`, `ci_pre_xcodebuild.sh` and `ci_post_xcodebuild.sh` in `ci_scripts/` next to the workspace. They run with **zsh** unless the file is executable and has a shebang. No `sudo`. Homebrew is available. | [Writing custom build scripts](https://developer.apple.com/documentation/xcode/writing-custom-build-scripts) |
 | Xcode Cloud repo URL | Xcode Cloud uses the repo's `origin` URL. SSH host aliases from `~/.ssh/config` don't work. | seen in practice |
@@ -59,5 +59,8 @@ Last checked: **2026-10-05**.
     The Drive API is called directly (curl + openssl), with no rclone.
 14. **flutter-ci's own scripts live in `.flutter-ci/`** (sparse checkout of `actions/` and
     `scripts/`), so the workflow, actions and scripts always come from the same version.
+16. **Version and build number come from `pubspec.yaml`** (`X.Y.Z+N`), on both platforms
+    (requested, v1.3.0). The tag's version must match `X.Y.Z`; the tag only decides UAT or
+    prod. Developers raise `+N` before every tag. `build_number_offset` is ignored with a warning.
 15. **The Flutter install on Xcode Cloud never deletes** an existing SDK. If the version
     differs, it stops with an error.

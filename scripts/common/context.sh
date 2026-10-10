@@ -33,6 +33,34 @@ _ctx_enabled() {
   if [[ "$(cfg "$1.enabled" false)" == "true" ]]; then printf true; else printf false; fi
 }
 
+# Largest versionCode Google Play accepts.
+FLUTTER_CI_MAX_BUILD_NUMBER=2100000000
+
+# _ctx_pubspec_version <app-root> — APP_VERSION (X.Y.Z) and BUILD_NUMBER (N)
+# from `version: X.Y.Z+N` in pubspec.yaml; the tag's X.Y.Z must match.
+_ctx_pubspec_version() {
+  local root="$1" raw
+  raw="$(yq e '.version // ""' "$root/pubspec.yaml" 2>/dev/null | tr -d ' "'"'"'')"
+  if [[ ! "$raw" =~ ^([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)$ ]]; then
+    log_error "pubspec.yaml must have 'version: X.Y.Z+N' (e.g. version: 1.4.0+45); found '${raw:-nothing}'. The app's version and build number come from there." \
+      "RELEASES.md#version-and-build-number"
+    return 1
+  fi
+  local version="${BASH_REMATCH[1]}" build="${BASH_REMATCH[2]}"
+  if [[ "$version" != "$VERSION_NAME" ]]; then
+    log_error "Tag $TAG is for version $VERSION_NAME, but pubspec.yaml says $raw. Set 'version: $VERSION_NAME+<next build number>' in pubspec.yaml, commit, and tag that commit." \
+      "RELEASES.md#version-and-build-number"
+    return 1
+  fi
+  if [[ "$build" -lt 1 || "$build" -gt $FLUTTER_CI_MAX_BUILD_NUMBER ]]; then
+    log_error "The build number in pubspec.yaml (+$build) must be between 1 and $FLUTTER_CI_MAX_BUILD_NUMBER." \
+      "RELEASES.md#version-and-build-number"
+    return 1
+  fi
+  _ctx APP_VERSION "$version"
+  _ctx BUILD_NUMBER "$build"
+}
+
 # resolve_context <app-root> <config-path> <tag> <android|ios>
 resolve_context() {
   local root="$1" config="$2" tag="$3" platform="$4"
@@ -56,6 +84,7 @@ resolve_context() {
   _ctx VERSION_NAME_FULL "$VERSION_NAME_FULL"
   _ctx IS_PRERELEASE "$IS_PRERELEASE"
   _ctx APP_NAME "$(cfg '.app.name')"
+  _ctx_pubspec_version "$root" || return 1
 
   detect_flutter_version "$root" "$(cfg '.app.flutter_version_file')" || return 1
   _ctx FLUTTER_VERSION "$FLUTTER_VERSION"
@@ -74,7 +103,6 @@ resolve_context() {
     local a="$e.android"
     _ctx ANDROID_ENABLED "$(cfg "$a.enabled" true)"
     _ctx JAVA_VERSION "$(cfg '.app.java_version' 17)"
-    _ctx BUILD_NUMBER_OFFSET "$(cfg '.app.build_number_offset' 0)"
     _ctx ANDROID_PACKAGE_NAME "$(cfg '.app.android_package_name')"
     _ctx ANDROID_FLAVOR "$(cfg "$a.flavor")"
     _ctx ANDROID_TARGET "$(cfg "$a.target")"

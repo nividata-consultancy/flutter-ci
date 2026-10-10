@@ -19,7 +19,6 @@ app:
   name: MyApp
   flutter_version_file: .fvmrc
   java_version: "17"
-  build_number_offset: 100
   run_tests: true
   run_analyze: false
   obfuscate: false
@@ -61,7 +60,6 @@ environments:
 | `flutter_version_file` | `.fvmrc` \| `pubspec.yaml` | auto | Where the Flutter version is pinned. See [Flutter version](#flutter-version). |
 | `java_version` | string/number | `"17"` | Java used by Gradle on GitHub. Use the same major version as your Mac: `flutter doctor -v` → Android toolchain → Java version (e.g. `21.0.10` → `"21"`). |
 | `prod_branches` | list | none | Optional prod guard: prod tags must be on one of these branches. Without it, prod tags work on any branch. |
-| `build_number_offset` | number ≥ 0 | `0` | Android versionCode = GitHub run number + offset. Set it higher than the highest version code already on Play. |
 | `run_tests` | bool | `true` | Run `flutter test` (if `test/` exists) before the Android build |
 | `run_analyze` | bool | `false` | Run `flutter analyze` before the Android build |
 | `obfuscate` | bool | `false` | `--obfuscate --split-debug-info` (the symbols are kept with the Android build files) |
@@ -70,6 +68,12 @@ environments:
 | `github_release.attach_artifacts` | bool | `false` | Attach the APK to that release |
 
 Tests and analysis run on GitHub only. iOS doesn't run them again.
+
+## Version and build number
+
+They are **not** set here. Both come from `version: X.Y.Z+N` in the app's
+`pubspec.yaml`, for Android and iOS. The tag's version must match `X.Y.Z`.
+See [RELEASES.md](RELEASES.md#version-and-build-number).
 
 ## Flutter version
 
@@ -120,7 +124,7 @@ If `dart_define_file` is set but neither 1 nor 2 exists, the build fails.
 CI always builds an **APK**. That APK goes to Firebase and Drive, and is kept on the
 GitHub run (Actions → run → Artifacts). When Play is enabled, CI also builds an **AAB**,
 only for the Play upload, because Play accepts nothing else. Files are named
-`<name>-<env>-<version>-<build>.apk`. The versionName is the full tag version (`1.4.0-beta.1`).
+`<name>-<env>-<version>-<build>.apk`. Version and build number come from `pubspec.yaml`.
 
 ## Destinations
 
@@ -168,4 +172,4 @@ iOS builds go to **TestFlight only**, through the Xcode Cloud workflow. A
 | `build_settings` | map | none | Extra Xcode build settings (`KEY: value`) for this environment. Same one-time setup. |
 | `target` | path | `lib/main.dart` | `--target` |
 
-The iOS version is always `X.Y.Z` and the build number is Xcode Cloud's.
+The iOS version and build number come from `pubspec.yaml` too.

@@ -78,4 +78,4 @@ jobs:
       ci-lib-ref: ${{ github.event.pull_request.head.sha || github.sha }}
       app-directory: example
       dry-run: true
-      tag: v0.0.1-beta.1
+      tag: v1.0.0-beta.1 # must match example/pubspec.yaml

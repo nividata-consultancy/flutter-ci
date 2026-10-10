@@ -8,7 +8,8 @@
 #  3. Install Flutter at the app's pinned version, precache, pub get.
 #  4. Dart defines from the repo or DART_DEFINES_<ENV>_JSON_BASE64.
 #  5. Generate ios/Flutter/Environment.xcconfig, copy GoogleService-Info.plist.
-#  6. flutter build ios --config-only (versions + defines into Generated.xcconfig).
+#  6. flutter build ios --config-only (version + build number from pubspec.yaml,
+#     dart defines into Generated.xcconfig).
 #  7. pod install (when the app uses CocoaPods).
 #  8. Save the parsed values to .flutter-ci/state.env for ci_post_xcodebuild.sh.
 #
@@ -39,7 +40,7 @@ FLUTTER_HOME="${FLUTTER_CI_FLUTTER_HOME:-$HOME/flutter}"
 on_exit() {
   local rc=$?
   if [[ $rc -ne 0 ]]; then
-    notify_slack "❌ ${APP_NAME:-iOS app} iOS ${CI_TAG:-?} (build ${CI_BUILD_NUMBER:-?}) failed in ci_post_clone.sh"
+    notify_slack "❌ ${APP_NAME:-iOS app} iOS ${CI_TAG:-?} (build ${BUILD_NUMBER:-?}) failed in ci_post_clone.sh"
   fi
 }
 trap on_exit EXIT
@@ -92,9 +93,9 @@ main() {
     die "iOS is disabled for '$ENVIRONMENT' (environments.$ENVIRONMENT.ios.enabled: false in .ci/config.yaml), so this build stops here on purpose. Nothing is built or sent to TestFlight. Xcode Cloud cannot skip a tag build, which is why it shows as failed." \
       "CONFIG_REFERENCE.md#platform-switches"
   fi
-  local build_number="${CI_BUILD_NUMBER:?CI_BUILD_NUMBER is not set}"
+  local build_number="$BUILD_NUMBER"     # from pubspec.yaml (version: X.Y.Z+N)
   local commit="${CI_COMMIT:-$(git rev-parse HEAD)}"
-  log_info "[$ENV_LABEL] $TAG → version $VERSION_NAME ($build_number), Flutter $FLUTTER_VERSION"
+  log_info "[$ENV_LABEL] $TAG → version $APP_VERSION ($build_number), Flutter $FLUTTER_VERSION"
 
   if [[ "$ENVIRONMENT" == "prod" && -n "$PROD_BRANCHES" ]]; then
     log_step "Prod guard"
@@ -130,7 +131,7 @@ main() {
 
   # 6. flutter build ios --config-only
   local args=(build ios --config-only --release --no-codesign
-    "--build-name=$VERSION_NAME" "--build-number=$build_number")
+    "--build-name=$APP_VERSION" "--build-number=$build_number")
   [[ -n "$defines" ]] && args+=("--dart-define-from-file=$defines")
   [[ -n "$IOS_TARGET" ]] && args+=(--target "$IOS_TARGET")
   if [[ "$OBFUSCATE" == "true" ]]; then
@@ -153,7 +154,7 @@ main() {
   mkdir -p "$(dirname "$STATE_FILE")"
   {
     print_context
-    printf 'BUILD_NUMBER=%q\nCOMMIT=%q\nAPP_ROOT=%q\n' "$build_number" "$commit" "$APP_ROOT"
+    printf 'COMMIT=%q\nAPP_ROOT=%q\n' "$commit" "$APP_ROOT"
   } >"$STATE_FILE"
   log_info "Saved build state to $STATE_FILE"
   log_step "ci_post_clone.sh done: [$ENV_LABEL] $TAG ($build_number)"

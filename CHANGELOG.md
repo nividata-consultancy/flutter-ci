@@ -7,6 +7,9 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 ## [Unreleased]
 
 ### Changed
+- **Version and build number now come from `pubspec.yaml`** (`version: X.Y.Z+N`) on
+  Android and iOS. The tag's version must match `X.Y.Z` (the build stops otherwise).
+  Raise `+N` before every tag. `app.build_number_offset` is ignored with a warning.
 - Docs: how to pick `java_version` (same as `flutter doctor -v` shows) and a
   reminder to commit `.fvmrc`.
 

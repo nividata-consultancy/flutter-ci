@@ -44,7 +44,7 @@ Open `.ci/config.yaml` and change only these:
 | `app.flutter_version_file` | Keep `.fvmrc` (from Step 1). Make sure `.fvmrc` is committed to git. |
 | `app.java_version` | The Java version your Mac builds with. Run `flutter doctor -v` and look under **Android toolchain** → **Java version**, e.g. `OpenJDK … (build 21.0.10…)` means `"21"`. Keep the quotes. |
 | `app.android_package_name` | Your applicationId: `grep applicationId android/app/build.gradle*` |
-| `app.build_number_offset` | If the app is already on Play: a number **higher** than the highest version code in Play Console → App bundle explorer (e.g. `100`). Otherwise `0`. |
+| `version:` in **pubspec.yaml** (not in the config) | `X.Y.Z+N`, e.g. `version: 1.0.0+101`. The build number `N` must be **higher** than every version code already on Play (Play Console → App bundle explorer). |
 | `app.run_tests` | `false` if the app has no working tests |
 | `dart_define_file` | Uncomment it if you have `env/uat.json` / `env/prod.json` |
 | `android.flavor` | Only if your Gradle file has `productFlavors` |
@@ -280,19 +280,19 @@ gh secret list                    # all secrets for your destinations are there
 git add -A && git commit -m "Set up flutter-ci" && git push
 ```
 
-Push a tag. The message is the release note for Firebase:
+Push a tag **with the same version as `pubspec.yaml`** (e.g. `version: 1.0.0+101` → tag
+`v1.0.0-beta.1`). The tag message is the release note for Firebase:
 ```bash
 git tag -a v1.0.0-beta.1 -m "First CI build"
 git push origin v1.0.0-beta.1
 ```
-Use a version **higher** than the one already on Play.
 
 Open GitHub → the app repo → **Actions → Release**. After about 10 minutes, all steps are
 green, and the **Summary** at the bottom lists each destination with `success`.
 
 If a step is red, open it and read the line starting with `Error:`; it says what to fix.
-See also [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Always push a **new** tag for the next
-try (`-beta.2`, `-beta.3`, …).
+See also [TROUBLESHOOTING.md](TROUBLESHOOTING.md). For the next try, raise the build
+number in `pubspec.yaml` (`+101` → `+102`), commit, and push a **new** tag (`-beta.2`).
 
 **Not setting up iOS yet?** Set `ios: { enabled: false }` under both environments in the
 config. Otherwise every tag also starts Xcode Cloud, if it's already set up.

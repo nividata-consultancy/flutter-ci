@@ -75,9 +75,22 @@ GitHub's runners and installed automatically on Xcode Cloud. On your Mac, run
 
 ## versionCode already used
 
-`Version code X has already been used` (Play):
-- Raise `app.build_number_offset` above the highest version code on Play.
-- Don't re-run a GitHub workflow; it reuses the same number. Push a new tag.
+`Version code X has already been used` (Play), or TestFlight says the build number was
+already used: the `+N` in `pubspec.yaml` was uploaded before, for example by the UAT
+build of the same version. Raise it (`+45` → `+46`, higher than anything on the store),
+commit, and push a new tag.
+
+## Tag and pubspec version don't match
+
+`Tag v1.4.0-beta.1 is for version 1.4.0, but pubspec.yaml says 1.3.9+44`: set
+`version: 1.4.0+<next number>` in `pubspec.yaml`, commit, then delete the tag and tag
+the new commit:
+```bash
+git push --delete origin v1.4.0-beta.1 && git tag -d v1.4.0-beta.1
+```
+
+`pubspec.yaml must have 'version: X.Y.Z+N'`: add or fix the `version:` line, e.g.
+`version: 1.4.0+45`. The `+N` build number is required.
 
 ## Prod guard rejected
 

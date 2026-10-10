@@ -28,15 +28,27 @@ teardown() { teardown_tmp; }
   [[ "$output" == *"--obfuscate"*"--split-debug-info=build/flutter-ci-debug-info"* ]]
 }
 
-@test "resolve: build number adds offset" {
+@test "resolve: version and build number come from pubspec" {
   mkdir -p "$TMP/app/.ci"
   write_valid_config "$TMP/app/.ci/config.yaml"
   printf '{"flutter":"3.24.5"}' >"$TMP/app/.fvmrc"
+  printf 'name: x\nversion: 1.0.0+42\n' >"$TMP/app/pubspec.yaml"
   cd "$TMP/app"
   GITHUB_OUTPUT="$TMP/out" GITHUB_REF_TYPE=tag GITHUB_REF_NAME=v1.0.0-beta.2 GITHUB_RUN_NUMBER=5 run "$ANDROID/resolve.sh"
   [ "$status" -eq 0 ]
-  grep -qx 'BUILD_NUMBER=105' "$TMP/out"
-  grep -qx 'VERSION_NAME_FULL=1.0.0-beta.2' "$TMP/out"
+  grep -qx 'BUILD_NUMBER=42' "$TMP/out"
+  grep -qx 'APP_VERSION=1.0.0' "$TMP/out"
+}
+
+@test "resolve: tag version must match pubspec" {
+  mkdir -p "$TMP/app/.ci"
+  write_valid_config "$TMP/app/.ci/config.yaml"
+  printf '{"flutter":"3.24.5"}' >"$TMP/app/.fvmrc"
+  printf 'name: x\nversion: 1.0.0+42\n' >"$TMP/app/pubspec.yaml"
+  cd "$TMP/app"
+  GITHUB_REF_TYPE=tag GITHUB_REF_NAME=v1.1.0-beta.1 run "$ANDROID/resolve.sh"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Tag v1.1.0-beta.1 is for version 1.1.0, but pubspec.yaml says 1.0.0+42"* ]]
 }
 
 @test "resolve: refuses branch builds and tag override without dry-run" {

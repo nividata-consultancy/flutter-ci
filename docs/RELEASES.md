@@ -10,23 +10,40 @@ Builds start **only** when you push a tag. Normal commits do nothing.
 | `vX.Y.Z` | **prod** | `v1.4.0` |
 
 Anything else starting with `v` (e.g. `v1.4`) fails with an explanation. Tags work on
-any branch. The version must be **higher** than the one already on the stores.
+any branch.
+
+## Version and build number
+
+Both come from **`pubspec.yaml`**, for Android and iOS:
+```yaml
+version: 1.4.0+45      # 1.4.0 = version, 45 = build number
+```
+- The tag's version must **match**: `v1.4.0-beta.1` and `v1.4.0` only build if pubspec
+  says `1.4.0+…`. Otherwise the build stops with an error that explains it.
+- **Raise the build number (`+45` → `+46`) before every new tag.** Play and TestFlight
+  reject a build number they've already received, including from a UAT build.
+- The version and build number must be higher than what's already on the stores.
 
 ## Make a UAT build
 
-```bash
-git tag -a v1.4.0-beta.1 -m "What testers should check"
-git push origin v1.4.0-beta.1
-```
-For the next one, raise the last number: `v1.4.0-beta.2`.
+1. In `pubspec.yaml`, set `version: 1.4.0+45` (raise the `+number`). Commit and push.
+2. Tag and push:
+   ```bash
+   git tag -a v1.4.0-beta.1 -m "What testers should check"
+   git push origin v1.4.0-beta.1
+   ```
+For the next UAT build: raise to `+46`, commit, then tag `v1.4.0-beta.2`.
 
 ## Make a prod build
 
-When QA approves a UAT build, tag the **same commit**:
-```bash
-git tag -a v1.4.0 -m "Release notes" v1.4.0-beta.3^{}
-git push origin v1.4.0
-```
+When QA approves the last UAT build:
+1. In `pubspec.yaml`, raise **only the build number** (`1.4.0+46` → `1.4.0+47`). Commit and push.
+   This is needed because the UAT build already used `+46`.
+2. Tag and push:
+   ```bash
+   git tag -a v1.4.0 -m "Release notes"
+   git push origin v1.4.0
+   ```
 
 ## Where builds go
 
@@ -70,7 +87,9 @@ both show `1.4.0`, so always check the build number in Xcode Cloud → Builds.
 
 ## When something goes wrong
 
-- **A build failed:** fix it, then push a **new** tag (`-beta.2`). Don't use "Re-run" on
-  GitHub; Play rejects the repeated build number.
+- **A build failed before uploading:** fix it and push a new tag (`-beta.2`). If anything
+  was already uploaded, also raise the `+number` in `pubspec.yaml` first.
+- **"Tag … is for version X, but pubspec.yaml says Y":** update `version:` in
+  `pubspec.yaml`, commit, delete the tag and tag the new commit.
 - **Wrong tag:** `git tag -d v1.4.0-beta.1 && git push --delete origin v1.4.0-beta.1`
 - **Error messages** link to [TROUBLESHOOTING.md](TROUBLESHOOTING.md).

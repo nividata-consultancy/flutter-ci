@@ -108,12 +108,13 @@ each value with `base64 -i env/uat.json | pbcopy`.
 
 ## Step 6: First build
 
-Push a **new** tag. Xcode Cloud ignores tags created before the workflow existed:
+Push a **new** tag. Xcode Cloud ignores tags created before the workflow existed.
+The tag's version must match `version:` in `pubspec.yaml` (e.g. `1.0.0+101` → `v1.0.0-beta.1`),
+and the version and build number must be higher than what's already on App Store Connect:
 ```bash
 git tag -a v1.0.0-beta.1 -m "First iOS build"
 git push origin v1.0.0-beta.1
 ```
-Use a version **higher** than the one on the App Store.
 
 Watch it in Xcode → **Report navigator (`⌘9`) → Cloud**, or in App Store Connect → your app
 → **Xcode Cloud → Builds**:

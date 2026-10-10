@@ -23,7 +23,7 @@ runs:
         ENVIRONMENT: ${{ fromJSON(inputs.context-json).ENVIRONMENT }}
         ENV_LABEL: ${{ fromJSON(inputs.context-json).ENV_LABEL }}
         TAG: ${{ fromJSON(inputs.context-json).TAG }}
-        VERSION_NAME_FULL: ${{ fromJSON(inputs.context-json).VERSION_NAME_FULL }}
+        APP_VERSION: ${{ fromJSON(inputs.context-json).APP_VERSION }}
         BUILD_NUMBER: ${{ fromJSON(inputs.context-json).BUILD_NUMBER }}
         DRY_RUN: ${{ fromJSON(inputs.context-json).DRY_RUN }}
         APP_NAME: ${{ fromJSON(inputs.context-json).APP_NAME }}
