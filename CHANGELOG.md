@@ -6,6 +6,8 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-10
+
 ### Changed
 - **Version and build number now come from `pubspec.yaml`** (`version: X.Y.Z+N`) on
   Android and iOS. The tag's version must match `X.Y.Z` (the build stops otherwise).
