@@ -24,6 +24,8 @@ environments:
         drive:     { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }  # Google Drive folder ID
     ios:                              # iOS always goes to TestFlight (Xcode Cloud), nowhere else
       enabled: true                   # false = UAT tags stop the iOS build at once (shows as failed in Xcode Cloud)
+      # flavor: westWind              # only for apps with one Xcode scheme per flavor (docs/IOS_SETUP.md)
+      # target: lib/main.dart
       # Optional, needs the one-time Xcode setup in docs/IOS_SETUP.md:
       # display_name: "MyApp UAT"
       # app_icon: AppIcon-UAT

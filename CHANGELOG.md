@@ -6,6 +6,14 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-11
+
+### Added
+- iOS flavors: `ios.flavor` (the Xcode scheme name) is passed as `--flavor` to
+  `flutter build ios --config-only`. Use one Xcode Cloud workflow per flavor; the build
+  stops early if the workflow's scheme doesn't match. See "Apps with flavors" in
+  `docs/IOS_SETUP.md`.
+
 ## [1.3.2] - 2026-10-11
 
 ### Fixed

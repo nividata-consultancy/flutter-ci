@@ -109,6 +109,13 @@ main() {
     prod_guard "$commit" $PROD_BRANCHES || exit 1
   fi
 
+  # With iOS flavors the Xcode Cloud workflow must archive the flavor's scheme;
+  # otherwise it would quietly build another app.
+  if [[ -n "$IOS_FLAVOR" && -n "${CI_XCODE_SCHEME:-}" && "$CI_XCODE_SCHEME" != "$IOS_FLAVOR" ]]; then
+    die "This Xcode Cloud workflow archives the scheme '$CI_XCODE_SCHEME', but environments.$ENVIRONMENT.ios.flavor is '$IOS_FLAVOR'. In the workflow's Archive action, choose the scheme '$IOS_FLAVOR' (and check FLUTTER_CI_CONFIG_PATH)." \
+      "IOS_SETUP.md#apps-with-flavors"
+  fi
+
   # Without this check a missing main file only shows up much later, in the
   # archive step, as "Command PhaseScriptExecution failed".
   local target="${IOS_TARGET:-lib/main.dart}"
@@ -160,6 +167,7 @@ main() {
     "--build-name=$APP_VERSION" "--build-number=$build_number")
   [[ -n "$defines" ]] && args+=("--dart-define-from-file=$defines")
   [[ -n "$IOS_TARGET" ]] && args+=(--target "$IOS_TARGET")
+  [[ -n "$IOS_FLAVOR" ]] && args+=(--flavor "$IOS_FLAVOR")
   log_step "flutter ${args[*]}"
   flutter "${args[@]}"
 

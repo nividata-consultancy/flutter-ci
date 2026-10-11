@@ -101,8 +101,8 @@ In Xcode: **Integrate → Create Workflow…** (menu bar at the top).
 | **General** | Name: `Release (tags)` |
 | **Environment** | **Xcode Version:** the same version you use (not "Latest") · **Clean:** ✅ · **Environment Variables → +:** `FLUTTER_CI_REF` = `v1` |
 | **START CONDITIONS** | Delete **Branch Changes**. Add **Tag Changes** → **Custom Tags** → **+** → **Tags Beginning With** → `v` |
-| **ACTIONS** | Delete **Build**. Add **Archive** → Platform **iOS** · Scheme **Runner** · Distribution Preparation **TestFlight and App Store** |
-| **POST-ACTIONS** | Add **TestFlight Internal Testing** → Groups **+** → `QA` |
+| **ACTIONS** | Delete **Build**. Add **Archive** → Platform **iOS** · Scheme **Runner** ([flavor apps](#apps-with-flavors): the flavor's scheme) · Distribution Preparation **App Store** (older Xcode: "TestFlight and App Store"; never **None**) |
+| **POST-ACTIONS** | Add **TestFlight Internal Testing** → Groups **+** → `QA`. Greyed out? Save first, and check that the `QA` group (Step 4) and the app exist in App Store Connect. |
 
 4. Click **Save**.
 5. If Xcode asks to **start a build and choose a branch**, press **Cancel**. Builds only
@@ -188,5 +188,25 @@ need this.
    ```
 7. Commit, push, and use a new tag.
 
-**Apps with iOS flavors (separate schemes per environment)** aren't supported yet. Ask
-the flutter-ci maintainers first.
+## Apps with flavors
+
+For apps with one Xcode scheme per flavor (e.g. `westWind`, `santaCruz`), each flavor is
+a separate app with its own config file (see
+[ANDROID_SETUP.md → Several apps from one repo](ANDROID_SETUP.md#several-apps-from-one-repo)).
+
+1. In each config, set the flavor and its main file under both environments:
+   ```yaml
+       ios:
+         enabled: true
+         flavor: westWind              # the Xcode scheme name
+         target: lib/west_wind_main.dart
+   ```
+2. Share **every** flavor scheme (Step 2, ✅ **Shared**) and commit them.
+3. Create **one Xcode Cloud workflow per flavor** (Step 5), each in that flavor's app in
+   App Store Connect, with:
+   - **Archive → Scheme:** the flavor's scheme (e.g. `westWind`), not `Runner`;
+   - **Environment Variables:** `FLUTTER_CI_CONFIG_PATH` = that flavor's config
+     (e.g. `.ci/west_wind.yaml`), plus `FLUTTER_CI_REF` = `v1`.
+
+If the workflow's scheme and `ios.flavor` don't match, the build stops early and says so.
+Every flavor's workflow starts on every tag.

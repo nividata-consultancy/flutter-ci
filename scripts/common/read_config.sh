@@ -215,7 +215,7 @@ _cfg_dest_enabled() {
 _cfg_validate_ios() {
   local p=".environments.$1.ios" label="environments.$1.ios"
   _cfg_expect_type "$p" "$label" '!!map' || return 0
-  _cfg_known_keys "$p" "$label" enabled display_name app_icon google_service_info build_settings target destinations
+  _cfg_known_keys "$p" "$label" enabled flavor display_name app_icon google_service_info build_settings target destinations
   _cfg_expect_type "$p.enabled" "$label.enabled" '!!bool' || true
 
   if _cfg_expect_type "$p.display_name" "$label.display_name" '!!str'; then
@@ -223,6 +223,10 @@ _cfg_validate_ios() {
   fi
   if _cfg_expect_type "$p.target" "$label.target" '!!str'; then
     [[ "$(cfg "$p.target")" == *.dart ]] || _cfg_err "$label.target must point to a .dart file"
+  fi
+  if _cfg_expect_type "$p.flavor" "$label.flavor" '!!str'; then
+    [[ "$(cfg "$p.flavor")" =~ ^[A-Za-z0-9_-]+$ ]] \
+      || _cfg_err "$label.flavor must be the Xcode scheme name, like 'westWind'"
   fi
   if _cfg_expect_type "$p.app_icon" "$label.app_icon" '!!str'; then
     [[ "$(cfg "$p.app_icon")" =~ ^[A-Za-z0-9_-]+$ ]] \

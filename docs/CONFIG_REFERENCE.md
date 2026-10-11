@@ -173,6 +173,7 @@ iOS builds go to **TestFlight only**, through the Xcode Cloud workflow. A
 | `google_service_info` | path | none | Copied to `ios/Runner/GoogleService-Info.plist` |
 | `build_settings` | map | none | Extra Xcode build settings (`KEY: value`) for this environment. Same one-time setup. |
 | `target` | path | `lib/main.dart` | `--target` |
+| `flavor` | string | none | `--flavor`: the Xcode scheme name. Only for apps with one scheme per flavor; see [IOS_SETUP.md → Apps with flavors](IOS_SETUP.md#apps-with-flavors). |
 
 The iOS version comes from `pubspec.yaml` too. The iOS **build number** is set by Xcode
 Cloud; see [IOS_SETUP.md → Build number](IOS_SETUP.md#ios-build-number).
