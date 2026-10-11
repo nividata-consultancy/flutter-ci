@@ -9,8 +9,16 @@ You need:
 - the **upload keystore** (`.jks`) and its passwords;
 - on your Mac: `brew install yq gh`, then `gh auth login`.
 
-Run all commands in your **app folder**. `~/Desktop/Projects/flutter-ci` is your local
-copy of flutter-ci; change the path if yours is somewhere else.
+Run all commands in your **app folder** (the folder with `pubspec.yaml`).
+`~/Desktop/Projects/flutter-ci` is your local copy of flutter-ci; change the path if
+yours is somewhere else.
+
+**App in a subfolder of the repo?** (e.g. the repo is `MyRepo/` and the app is
+`MyRepo/my_app/`). GitHub only reads workflows from the **repo root**, so:
+- put `release.yml` in `MyRepo/.github/workflows/`, not inside `my_app/`;
+- in `release.yml`, set `app-directory: my_app`. `config-path` stays relative to
+  that folder (`.ci/config.yaml`);
+- everything else (`.ci/`, `ios/ci_scripts/`, `.fvmrc`, `env/`) stays inside `my_app/`.
 
 ---
 
@@ -19,7 +27,7 @@ copy of flutter-ci; change the path if yours is somewhere else.
 ```bash
 CI=~/Desktop/Projects/flutter-ci
 mkdir -p .github/workflows .ci ios/ci_scripts
-cp "$CI/templates/.github/workflows/release.yml"        .github/workflows/release.yml
+cp "$CI/templates/.github/workflows/release.yml"        .github/workflows/release.yml   # app in a subfolder: copy it to the repo root's .github/workflows/ instead
 cp "$CI/templates/.ci/config.yaml"                      .ci/config.yaml
 cp "$CI/templates/ios/ci_scripts/ci_post_clone.sh"      ios/ci_scripts/
 cp "$CI/templates/ios/ci_scripts/ci_post_xcodebuild.sh" ios/ci_scripts/
@@ -336,7 +344,7 @@ their own names:
 jobs:
   juna_bhajan:
     uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v1
-    with: { ci-lib-ref: v1, config-path: .ci/juna_bhajan.yaml }
+    with: { ci-lib-ref: v1, config-path: .ci/juna_bhajan.yaml }   # app in a subfolder: add app-directory: my_app
     secrets:
       FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID_JUNA_BHAJAN }}
       # … the other secrets as in the template

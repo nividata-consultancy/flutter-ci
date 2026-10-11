@@ -1,6 +1,9 @@
 # Config reference: `.ci/config.yaml`
 
-Each app has one config file at `.ci/config.yaml`. Every build checks it first and
+Each app has one config file at `.ci/config.yaml`, inside the app folder (next to
+`pubspec.yaml`). If the app is in a subfolder of the repo, or the file has another name,
+set `app-directory` / `config-path` in the app's `release.yml`; `config-path` is relative
+to `app-directory`. Every build checks it first and
 stops with a list of **all** problems. Unknown keys count as errors, so typos are caught.
 
 Check it on your Mac:

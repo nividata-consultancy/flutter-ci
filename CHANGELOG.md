@@ -14,6 +14,8 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
   See "Several apps from one repo" in `docs/ANDROID_SETUP.md`.
 
 ### Changed
+- Template and docs: how to use `app-directory` for apps in a subfolder of the
+  repo (workflow at the repo root, `config-path` relative to the app folder).
 - `app.run_tests` now defaults to `false` (like `run_analyze`). Set it to `true`
   to run `flutter test` before the Android build.
 

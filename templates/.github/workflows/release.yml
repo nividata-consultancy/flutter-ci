@@ -19,7 +19,8 @@ jobs:
     uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v1
     with:
       ci-lib-ref: v1 # keep equal to the @ref above
-      # config-path: .ci/config.yaml
+      # app-directory: .              # folder with pubspec.yaml, if the app is in a subfolder (e.g. my_app)
+      # config-path: .ci/config.yaml  # relative to app-directory
       # dry-run: false
     secrets:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}

@@ -102,6 +102,10 @@ In Xcode: **Integrate → Create Workflow…** (menu bar at the top).
 Check it in **Integrate → Manage Workflows**: there must be **only** `Release (tags)`.
 Delete any **Default** workflow; it would build on every commit.
 
+**Only if the app is in a subfolder of the repo:** add `FLUTTER_CI_APP_DIR` = the folder
+(e.g. `my_app`). **Only if the config file isn't `.ci/config.yaml`:** add
+`FLUTTER_CI_CONFIG_PATH` (relative to that folder, e.g. `.ci/juna_bhajan.yaml`).
+
 **Only if `env/uat.json` / `env/prod.json` are not in git:** add the environment variables
 `DART_DEFINES_UAT_JSON_BASE64` and `DART_DEFINES_PROD_JSON_BASE64` with ✅ **Secret**. Get
 each value with `base64 -i env/uat.json | pbcopy`.
