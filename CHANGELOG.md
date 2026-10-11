@@ -6,6 +6,8 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-10-11
+
 ### Added
 - Several apps (flavors) from one repo: one config file and one job per app; their
   builds run in parallel (the concurrency group now includes `config-path`).
