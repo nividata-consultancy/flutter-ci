@@ -144,6 +144,19 @@ red. That's expected.
 
 Daily use: [RELEASES.md](RELEASES.md)
 
+## iOS build number
+
+Xcode Cloud **replaces** the build number when it prepares the build for TestFlight. It
+uses its own counter (`CI_BUILD_NUMBER`), which goes up by 1 for **every** Xcode Cloud
+build of the app, failed ones included. The version (`1.9.16`) still comes from pubspec.
+
+To start the counter where pubspec is (e.g. pubspec says `+42`):
+App Store Connect → your app → **Xcode Cloud** → **Settings** → **Build Number** →
+**Next Build Number** → `42` (or higher than the last build in TestFlight) → **Save**.
+
+After that, the numbers only stay equal if every tag raises pubspec by 1 and no Xcode
+Cloud build fails or is disabled. The `ci_post_clone.sh` log warns when they differ.
+
 ---
 
 ## Optional: different name and icon for UAT

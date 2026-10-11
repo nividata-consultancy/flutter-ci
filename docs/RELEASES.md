@@ -23,6 +23,10 @@ version: 1.4.0+45      # 1.4.0 = version, 45 = build number
 - **Raise the build number (`+45` → `+46`) before every new tag.** Play and TestFlight
   reject a build number they've already received, including from a UAT build.
 - The version and build number must be higher than what's already on the stores.
+- **iOS build number:** Xcode Cloud replaces it with its **own** build counter (1, 2, 3…
+  for every Xcode Cloud build of the app, failed ones included). The iOS version still
+  comes from pubspec. To make TestFlight numbers line up with pubspec, see
+  [IOS_SETUP.md → Build number](IOS_SETUP.md#ios-build-number).
 
 ## Make a UAT build
 

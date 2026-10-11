@@ -73,7 +73,8 @@ Tests and analysis run on GitHub only. iOS doesn't run them again.
 ## Version and build number
 
 They are **not** set here. Both come from `version: X.Y.Z+N` in the app's
-`pubspec.yaml`, for Android and iOS. The tag's version must match `X.Y.Z`.
+`pubspec.yaml`. The tag's version must match `X.Y.Z`. (On iOS, Xcode Cloud uses its own
+build number.)
 See [RELEASES.md](RELEASES.md#version-and-build-number).
 
 ## Flutter version
@@ -173,4 +174,5 @@ iOS builds go to **TestFlight only**, through the Xcode Cloud workflow. A
 | `build_settings` | map | none | Extra Xcode build settings (`KEY: value`) for this environment. Same one-time setup. |
 | `target` | path | `lib/main.dart` | `--target` |
 
-The iOS version and build number come from `pubspec.yaml` too.
+The iOS version comes from `pubspec.yaml` too. The iOS **build number** is set by Xcode
+Cloud; see [IOS_SETUP.md → Build number](IOS_SETUP.md#ios-build-number).

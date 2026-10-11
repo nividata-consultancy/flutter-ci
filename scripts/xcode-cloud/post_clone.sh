@@ -97,6 +97,11 @@ main() {
   local build_number="$BUILD_NUMBER"     # from pubspec.yaml (version: X.Y.Z+N)
   local commit="${CI_COMMIT:-$(git rev-parse HEAD)}"
   log_info "[$ENV_LABEL] $TAG → version $APP_VERSION ($build_number), Flutter $FLUTTER_VERSION"
+  # Xcode Cloud replaces the build number with its own (CI_BUILD_NUMBER) when it
+  # prepares the build for TestFlight; only its "Next Build Number" setting changes that.
+  if [[ -n "${CI_BUILD_NUMBER:-}" && "$CI_BUILD_NUMBER" != "$build_number" ]]; then
+    log_warn "TestFlight will show build $CI_BUILD_NUMBER (the Xcode Cloud build number), not $build_number from pubspec.yaml. To line them up, set App Store Connect → your app → Xcode Cloud → Settings → Build Number → Next Build Number."
+  fi
 
   if [[ "$ENVIRONMENT" == "prod" && -n "$PROD_BRANCHES" ]]; then
     log_step "Prod guard"

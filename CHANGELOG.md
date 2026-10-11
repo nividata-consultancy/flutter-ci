@@ -6,6 +6,17 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-10-11
+
+### Fixed
+- Docs: the iOS build number is set by Xcode Cloud (its own counter), not by
+  `pubspec.yaml`. New "iOS build number" section in `docs/IOS_SETUP.md` explains how to
+  line them up with Xcode Cloud's "Next Build Number" setting.
+
+### Added
+- Xcode Cloud: `ci_post_clone.sh` warns when the Xcode Cloud build number differs from
+  the pubspec build number.
+
 ## [1.3.1] - 2026-10-11
 
 ### Added
