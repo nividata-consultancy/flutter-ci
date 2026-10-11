@@ -298,3 +298,59 @@ number in `pubspec.yaml` (`+101` → `+102`), commit, and push a **new** tag (`-
 config. Otherwise every tag also starts Xcode Cloud, if it's already set up.
 
 Next: [iOS setup](IOS_SETUP.md) · Daily use: [RELEASES.md](RELEASES.md)
+
+---
+
+## Several apps from one repo (flavors)
+
+If one repo builds several Play apps from different flavors (e.g. `juna_bhajan` and
+`hindi_bhajan`), give **each app its own config file** and **its own job**.
+
+**1. One config per app**, e.g. `.ci/juna_bhajan.yaml` and `.ci/hindi_bhajan.yaml`. Each
+has its own `name`, `android_package_name` (the flavor's applicationId), `flavor`,
+`target` and destinations. Turn on `github_release` in **one** of them only:
+```yaml
+app:
+  name: HindiBhajan
+  android_package_name: com.example.hindibhajan
+  github_release: { enabled: false }       # only one app creates the GitHub Release
+environments:
+  uat:
+    android:
+      flavor: hindi_bhajan
+      target: lib/main_hindi_bhajan.dart
+      destinations: { playstore: { enabled: true, tracks: [internal] } }
+    ios: { enabled: false }
+  prod:
+    android:
+      flavor: hindi_bhajan
+      target: lib/main_hindi_bhajan.dart
+      destinations: { playstore: { enabled: true, tracks: [internal] } }
+    ios: { enabled: false }
+```
+
+**2. One job per app** in `.github/workflows/release.yml`: copy the `android:` job, rename
+it, and set `config-path`. Secrets that differ per app (like the Firebase app ID) get
+their own names:
+```yaml
+jobs:
+  juna_bhajan:
+    uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v1
+    with: { ci-lib-ref: v1, config-path: .ci/juna_bhajan.yaml }
+    secrets:
+      FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID_JUNA_BHAJAN }}
+      # … the other secrets as in the template
+  hindi_bhajan:
+    uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v1
+    with: { ci-lib-ref: v1, config-path: .ci/hindi_bhajan.yaml }
+    secrets:
+      FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID_HINDI_BHAJAN }}
+      # … the other secrets as in the template
+```
+
+- **One tag builds all apps** in parallel. To skip an app for a while, set
+  `android: { enabled: false }` in its config.
+- All apps share the **same version and build number** from `pubspec.yaml`. That's fine,
+  because they're separate apps on Play.
+- The Play service account and the signing key can be shared. In Play Console, give the
+  service account access to **each** app.

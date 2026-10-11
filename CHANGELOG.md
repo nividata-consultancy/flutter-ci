@@ -6,6 +6,11 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+### Added
+- Several apps (flavors) from one repo: one config file and one job per app; their
+  builds run in parallel (the concurrency group now includes `config-path`).
+  See "Several apps from one repo" in `docs/ANDROID_SETUP.md`.
+
 ### Changed
 - `app.run_tests` now defaults to `false` (like `run_analyze`). Set it to `true`
   to run `flutter test` before the Android build.

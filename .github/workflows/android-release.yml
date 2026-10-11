@@ -112,7 +112,7 @@ jobs:
     permissions:
       contents: write # create the GitHub Release on the app repo
     concurrency:
-      group: flutter-ci-android-${{ github.repository }}-${{ github.ref }}-${{ inputs.tag }}
+      group: flutter-ci-android-${{ github.repository }}-${{ github.ref }}-${{ inputs.tag }}-${{ inputs.config-path }}
       cancel-in-progress: false
     defaults:
       run:
