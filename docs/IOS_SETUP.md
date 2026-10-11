@@ -16,6 +16,15 @@ Run all commands in your **app folder**.
 
 Do [Android setup](ANDROID_SETUP.md) Step 1 (copy the files) and Step 2 (fill in the config).
 
+**Apps with flavor main files** (no `lib/main.dart`, e.g. `lib/main_myapp.dart`): set
+the iOS main file under both environments, or the archive fails with
+"PhaseScriptExecution failed":
+```yaml
+    ios:
+      enabled: true
+      target: lib/main_myapp.dart
+```
+
 If you don't use Android, turn it off in `.ci/config.yaml` under both environments:
 ```yaml
     android:

@@ -40,6 +40,25 @@ Xcode Cloud: the scripts don't run, or you see `zsh` errors, `permission denied`
 | Signing error during Archive | Runner target → Signing & Capabilities: automatic signing on, Team set |
 | "Version must be higher" in App Store Connect | Use a tag version above the current App Store version |
 
+## PhaseScriptExecution failed (iOS)
+
+`Command PhaseScriptExecution failed with a nonzero exit code` in the Xcode Cloud
+**Archive** step means a "Run Script" build phase failed, usually Flutter's own
+(`xcode_backend.sh build`). The real reason is a few lines **above** it in the log
+(Archive → Logs → search for `error:`). The common causes:
+
+- **No `lib/main.dart`** (apps with flavor main files): set the iOS main file in the config:
+  ```yaml
+      ios: { enabled: true, target: lib/main_myapp.dart }
+  ```
+  Since v1.3.1, `ci_post_clone.sh` checks this and stops early with a clear message.
+- **Dart compile error:** the same code doesn't build locally with
+  `flutter build ios --release --no-codesign -t <target>` either. Fix the code.
+- **`Sandbox: rsync … deny file-write`** (CocoaPods): in Xcode → Runner target → Build
+  Settings, set **User Script Sandboxing** (`ENABLE_USER_SCRIPT_SANDBOXING`) to **No**.
+- **Crashlytics / other custom scripts:** a missing `GoogleService-Info.plist` on CI.
+  Commit it, or set `google_service_info` in the config.
+
 ## yq missing
 
 The scripts need [mikefarah/yq](https://github.com/mikefarah/yq) v4. It's preinstalled on

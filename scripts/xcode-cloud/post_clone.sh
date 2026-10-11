@@ -103,6 +103,14 @@ main() {
     prod_guard "$commit" $PROD_BRANCHES || exit 1
   fi
 
+  # Without this check a missing main file only shows up much later, in the
+  # archive step, as "Command PhaseScriptExecution failed".
+  local target="${IOS_TARGET:-lib/main.dart}"
+  if [[ ! -f "$target" ]]; then
+    die "The iOS entry file '$target' does not exist. If the app uses flavor main files (e.g. lib/main_myapp.dart), set environments.$ENVIRONMENT.ios.target in the config." \
+      "TROUBLESHOOTING.md#phasescriptexecution-failed-ios"
+  fi
+
   # 3. Flutter
   install_flutter
   log_step "flutter precache --ios && flutter pub get"
