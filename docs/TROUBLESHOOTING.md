@@ -56,6 +56,9 @@ Xcode Cloud: the scripts don't run, or you see `zsh` errors, `permission denied`
   `flutter build ios --release --no-codesign -t <target>` either. Fix the code.
 - **`Sandbox: rsync … deny file-write`** (CocoaPods): in Xcode → Runner target → Build
   Settings, set **User Script Sandboxing** (`ENABLE_USER_SCRIPT_SANDBOXING`) to **No**.
+- **`flutterfire: command not found`** (the build phase *FlutterFire: "flutterfire
+  upload-crashlytics-symbols"*): since v1.3.1, flutter-ci installs the FlutterFire CLI
+  automatically when the Xcode project has this phase. On older versions, update `v1`.
 - **Crashlytics / other custom scripts:** a missing `GoogleService-Info.plist` on CI.
   Commit it, or set `google_service_info` in the config.
 

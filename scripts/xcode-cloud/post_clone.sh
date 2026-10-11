@@ -5,7 +5,8 @@
 #  1. Require CI_TAG (the workflow must start on Tag Changes).
 #  2. Parse tag, validate .ci/config.yaml, run the prod guard (if
 #     app.prod_branches is set).
-#  3. Install Flutter at the app's pinned version, precache, pub get.
+#  3. Install Flutter at the app's pinned version, precache, pub get, and the
+#     FlutterFire CLI if a Crashlytics build phase needs it.
 #  4. Dart defines from the repo or DART_DEFINES_<ENV>_JSON_BASE64.
 #  5. Generate ios/Flutter/Environment.xcconfig, copy GoogleService-Info.plist.
 #  6. flutter build ios --config-only (version + build number from pubspec.yaml,
@@ -116,6 +117,18 @@ main() {
   log_step "flutter precache --ios && flutter pub get"
   flutter precache --ios
   flutter pub get
+
+  # Apps set up with `flutterfire configure` get an Xcode build phase that runs
+  # `flutterfire upload-crashlytics-symbols`. Xcode Cloud doesn't have that CLI,
+  # so the archive would fail with "PhaseScriptExecution failed".
+  if grep -q "flutterfire upload-crashlytics-symbols" ios/Runner.xcodeproj/project.pbxproj 2>/dev/null; then
+    log_step "Installing the FlutterFire CLI (used by a Crashlytics build phase)"
+    dart pub global activate flutterfire_cli \
+      || die "Could not install the FlutterFire CLI (dart pub global activate flutterfire_cli)." \
+        "TROUBLESHOOTING.md#phasescriptexecution-failed-ios"
+    export PATH="$PATH:$HOME/.pub-cache/bin"
+    flutterfire --version || true
+  fi
 
   # 4. Dart defines
   local defines

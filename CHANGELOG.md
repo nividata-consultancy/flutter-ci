@@ -9,6 +9,9 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 ## [1.3.1] - 2026-10-11
 
 ### Added
+- Xcode Cloud: installs the FlutterFire CLI when the Xcode project has the
+  `flutterfire upload-crashlytics-symbols` build phase (otherwise the archive fails
+  with "PhaseScriptExecution failed").
 - Xcode Cloud: `ci_post_clone.sh` stops early with a clear message when the iOS main
   file (`ios.target`, default `lib/main.dart`) doesn't exist, instead of a later
   "PhaseScriptExecution failed" in the archive.
