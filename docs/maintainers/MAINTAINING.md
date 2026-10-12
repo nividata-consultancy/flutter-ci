@@ -12,9 +12,8 @@ Every app runs this code on every release, so change it carefully.
   through env vars, not arguments.
 - Errors use `die "what happened and what to do" "TROUBLESHOOTING.md#section"`. The
   section must exist.
-- Builds may only create these files in the app: `.flutter-ci/`,
-  `ios/Flutter/Environment.xcconfig`, `ios/Runner/GoogleService-Info.plist` (when configured),
-  and `android/key.properties` (deleted after the build).
+- Builds may only create these files in the app: `.flutter-ci/` and
+  `android/key.properties` (deleted after the build).
 - New config keys, inputs and secrets must be **optional**. A new required one is a
   breaking change (see [Versions](#versions)).
 

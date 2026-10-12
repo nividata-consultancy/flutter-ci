@@ -15,13 +15,11 @@ environments:
       destinations:
         playstore: { enabled: true, tracks: [internal] }
     ios:
-      display_name: "Example UAT"
-      app_icon: AppIcon-UAT
+      enabled: true
   prod:
     build_args: ["--dart-define-from-file=env/prod.json"]
     android:
       destinations:
         playstore: { enabled: true, tracks: [internal] }
     ios:
-      display_name: "Example"
-      app_icon: AppIcon
+      enabled: true

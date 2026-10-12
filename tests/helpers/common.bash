@@ -37,11 +37,8 @@ environments:
         firebase: { enabled: true, groups: "qa-team" }
         drive: { enabled: true, folder_id: "0AbCdEfGhIjKlMnOp" }
     ios:
-      display_name: "MyApp UAT"
-      app_icon: AppIcon-UAT
-      google_service_info: ios/config/uat/GoogleService-Info.plist
-      build_settings:
-        MY_SETTING: "abc"
+      flavor: uatScheme
+      target: lib/main_uat.dart
   prod:
     build_args: ["--dart-define-from-file=env/prod.json"]
     android:
@@ -50,8 +47,7 @@ environments:
         firebase: { enabled: false, groups: "qa-team" }
         drive: { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }
     ios:
-      display_name: "MyApp"
-      app_icon: AppIcon
+      enabled: true
 YAML
 }
 

@@ -1,4 +1,3 @@
 # flutter-ci (append to your app's .gitignore)
 /.flutter-ci/
-/ios/Flutter/Environment.xcconfig
 android/key.properties

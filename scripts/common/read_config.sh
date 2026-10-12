@@ -242,9 +242,6 @@ _cfg_validate_ios() {
   _cfg_known_keys "$p" "$label" enabled flavor display_name app_icon google_service_info build_settings target destinations
   _cfg_expect_type "$p.enabled" "$label.enabled" '!!bool' || true
 
-  if _cfg_expect_type "$p.display_name" "$label.display_name" '!!str'; then
-    [[ "$(cfg "$p.display_name")" != *"//"* ]] || _cfg_err "$label.display_name must not contain '//' (it starts a comment in .xcconfig files)"
-  fi
   if _cfg_expect_type "$p.target" "$label.target" '!!str'; then
     [[ "$(cfg "$p.target")" == *.dart ]] || _cfg_err "$label.target must point to a .dart file"
   fi
@@ -252,31 +249,14 @@ _cfg_validate_ios() {
     [[ "$(cfg "$p.flavor")" =~ ^[A-Za-z0-9_-]+$ ]] \
       || _cfg_err "$label.flavor must be the Xcode scheme name, like 'westWind'"
   fi
-  if _cfg_expect_type "$p.app_icon" "$label.app_icon" '!!str'; then
-    [[ "$(cfg "$p.app_icon")" =~ ^[A-Za-z0-9_-]+$ ]] \
-      || _cfg_err "$label.app_icon must be an asset catalog icon set name like 'AppIcon-UAT'"
-  fi
-  if _cfg_expect_type "$p.google_service_info" "$label.google_service_info" '!!str'; then
-    [[ "$(cfg "$p.google_service_info")" == *.plist ]] \
-      || _cfg_err "$label.google_service_info must point to a .plist file"
-  fi
-  if _cfg_expect_type "$p.build_settings" "$label.build_settings" '!!map'; then
-    local key t
-    while IFS= read -r key; do
-      [[ -z "$key" ]] && continue
-      [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] \
-        || _cfg_err "$label.build_settings: '$key' is not a valid build setting name (UPPER_SNAKE_CASE)"
-      case "$key" in
-        APP_DISPLAY_NAME | ASSETCATALOG_COMPILER_APPICON_NAME)
-          _cfg_err "$label.build_settings.$key: use display_name / app_icon instead" ;;
-      esac
-      t="$(yq e ".environments.$1.ios.build_settings[\"$key\"] | type" "$FLUTTER_CI_CONFIG")"
-      case "$t" in
-        '!!str' | '!!int' | '!!bool' | '!!float') ;;
-        *) _cfg_err "$label.build_settings.$key must be a plain value (got ${t#!!})" ;;
-      esac
-    done < <(yq e "($p.build_settings) | keys | .[]" "$FLUTTER_CI_CONFIG")
-  fi
+  # Removed: a different name, icon or Firebase file per environment is an
+  # Xcode flavor (one scheme per app), not a per-tag override of the same app.
+  local key
+  for key in display_name app_icon google_service_info build_settings; do
+    if cfg_has "$p.$key"; then
+      _cfg_err "$label.$key was removed. For a different name, icon or GoogleService-Info.plist, use an Xcode flavor (ios.flavor), see IOS_SETUP.md#apps-with-flavors"
+    fi
+  done
 
   if cfg_has "$p.destinations"; then
     _cfg_err "$label.destinations: iOS builds go to TestFlight only (set up in the Xcode Cloud workflow); remove this block"

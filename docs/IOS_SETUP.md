@@ -155,36 +155,11 @@ Cloud build fails or is disabled. The `ci_post_clone.sh` log warns when they dif
 
 ---
 
-## Optional: different name and icon for UAT
-
-Only if testers should see e.g. **"MyApp UAT"** with a different icon. Most apps don't
-need this.
-
-1. `ios/Flutter/Release.xcconfig`: keep the existing lines and add, with the `#include?`
-   line **last**:
-   ```
-   APP_DISPLAY_NAME = MyApp
-   ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
-
-   #include? "Environment.xcconfig"
-   ```
-2. `ios/Flutter/Debug.xcconfig`: add `APP_DISPLAY_NAME = MyApp Dev` and
-   `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`.
-3. Remove Xcode's own icon setting:
-   `sed -i '' '/ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;/d' ios/Runner.xcodeproj/project.pbxproj`
-4. `ios/Runner/Info.plist`: set `CFBundleDisplayName` to `$(APP_DISPLAY_NAME)`.
-5. UAT icon: `cp -R ios/Runner/Assets.xcassets/AppIcon.appiconset ios/Runner/Assets.xcassets/AppIcon-UAT.appiconset`,
-   then replace its images.
-6. Config:
-   ```yaml
-     uat:
-       ios: { enabled: true, display_name: "MyApp UAT", app_icon: AppIcon-UAT }
-     prod:
-       ios: { enabled: true, display_name: "MyApp", app_icon: AppIcon }
-   ```
-7. Commit, push, and use a new tag.
-
 ## Apps with flavors
+
+A different app name, icon or `GoogleService-Info.plist` is a separate flavor (its own
+Xcode scheme and bundle ID), not a per-environment setting. flutter-ci builds the same
+app for UAT and prod.
 
 For apps with one Xcode scheme per flavor (e.g. `westWind`, `santaCruz`), each flavor is
 a separate app with its own config file (see

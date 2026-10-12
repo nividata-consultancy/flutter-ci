@@ -60,7 +60,7 @@ Xcode Cloud: the scripts don't run, or you see `zsh` errors, `permission denied`
   upload-crashlytics-symbols"*): since v1.3.1, flutter-ci installs the FlutterFire CLI
   automatically when the Xcode project has this phase. On older versions, update `v2`.
 - **Crashlytics / other custom scripts:** a missing `GoogleService-Info.plist` on CI.
-  Commit it, or set `google_service_info` in the config.
+  Commit it (for a different one per app, use a flavor).
 
 ## yq missing
 

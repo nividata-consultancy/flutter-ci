@@ -51,9 +51,9 @@ Last checked: **2026-10-05**.
 10. **iOS goes to TestFlight only.** No Firebase or Drive for iOS, and no TestFlight notes.
 11. **Release notes = the tag message** (fallback: commit titles). They go to Firebase and the
     app's GitHub Release only.
-12. **iOS uses one scheme (`Runner`).** An optional per-environment name, icon and build
-    settings come from a generated `Environment.xcconfig`. Apps with iOS flavor schemes are
-    not supported yet.
+12. **UAT and prod are the same iOS app.** No per-environment name, icon, Firebase file or
+    build settings: an app that needs those uses a flavor (its own Xcode scheme, set with
+    `ios.flavor`), with one Xcode Cloud workflow per flavor.
 13. **Drive has two options:** a service account plus a Shared Drive (Workspace), or your own
     Google account plus `drive.file` and a folder created by `scripts/tools/gdrive_create_folder.sh`.
     The Drive API is called directly (curl + openssl), with no rclone.

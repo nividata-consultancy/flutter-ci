@@ -6,6 +6,17 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-12
+
+### Removed
+- iOS per-environment overrides: `environments.<env>.ios.display_name`, `app_icon`,
+  `google_service_info` and `build_settings`. UAT and prod now build the same iOS app;
+  a different name, icon or `GoogleService-Info.plist` is a flavor (`ios.flavor`). A
+  config that still sets one fails validation and points to flavors. flutter-ci no
+  longer writes `ios/Flutter/Environment.xcconfig` or copies `GoogleService-Info.plist`.
+  Shipped in v2 by decision (no app used these keys); an app's leftover
+  `#include? "Environment.xcconfig"` line is harmless and can be deleted.
+
 ## [2.1.0] - 2026-10-12
 
 ### Changed

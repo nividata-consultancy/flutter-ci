@@ -7,12 +7,11 @@
 #     app.prod_branches is set).
 #  3. Install Flutter at the app's pinned version, precache, pub get, and the
 #     FlutterFire CLI if a Crashlytics build phase needs it.
-#  4. Generate ios/Flutter/Environment.xcconfig, copy GoogleService-Info.plist.
-#  5. flutter build ios --config-only (version + build number from pubspec.yaml,
+#  4. flutter build ios --config-only (version + build number from pubspec.yaml,
 #     environments.<env>.build_args such as --dart-define-from-file into
 #     Generated.xcconfig).
-#  6. pod install (when the app uses CocoaPods).
-#  7. Save the parsed values to .flutter-ci/state.env for ci_post_xcodebuild.sh.
+#  5. pod install (when the app uses CocoaPods).
+#  6. Save the parsed values to .flutter-ci/state.env for ci_post_xcodebuild.sh.
 #
 # Optional env (Xcode Cloud workflow → Environment):
 #   FLUTTER_CI_APP_DIR      app root inside the repo (default: .)
@@ -25,8 +24,6 @@ FLUTTER_CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$FLUTTER_CI_DIR/scripts/common/context.sh"
 # shellcheck source=scripts/common/prod_guard.sh
 source "$FLUTTER_CI_DIR/scripts/common/prod_guard.sh"
-# shellcheck source=scripts/common/ios_xcconfig.sh
-source "$FLUTTER_CI_DIR/scripts/common/ios_xcconfig.sh"
 # shellcheck source=scripts/common/notify_slack.sh
 source "$FLUTTER_CI_DIR/scripts/common/notify_slack.sh"
 
@@ -140,23 +137,7 @@ main() {
     flutterfire --version || true
   fi
 
-  # 4. Environment.xcconfig + GoogleService-Info.plist
-  log_step "Generating ios/Flutter/Environment.xcconfig"
-  ios_xcconfig "$CONFIG_PATH" "$ENVIRONMENT" >ios/Flutter/Environment.xcconfig
-  cat ios/Flutter/Environment.xcconfig
-  # Only matters when the config sets a name, icon or build settings.
-  if [[ "$(grep -cv '^//' ios/Flutter/Environment.xcconfig)" -gt 0 ]] \
-    && ! grep -q 'Environment.xcconfig' ios/Flutter/Release.xcconfig; then
-    log_warn "environments.$ENVIRONMENT.ios sets a name/icon/build settings, but ios/Flutter/Release.xcconfig does not include Environment.xcconfig, so they are ignored. See $(doc_url IOS_SETUP.md#optional-different-name-and-icon-for-uat)"
-  fi
-  if [[ -n "$IOS_GOOGLE_SERVICE_INFO" ]]; then
-    [[ -f "$IOS_GOOGLE_SERVICE_INFO" ]] \
-      || die "environments.$ENVIRONMENT.ios.google_service_info '$IOS_GOOGLE_SERVICE_INFO' does not exist." "CONFIG_REFERENCE.md#ios"
-    cp "$IOS_GOOGLE_SERVICE_INFO" ios/Runner/GoogleService-Info.plist
-    log_info "Copied $IOS_GOOGLE_SERVICE_INFO to ios/Runner/GoogleService-Info.plist"
-  fi
-
-  # 5. flutter build ios --config-only
+  # 4. flutter build ios --config-only
   local args=(build ios --config-only --release --no-codesign
     "--build-name=$APP_VERSION" "--build-number=$build_number")
   [[ -n "$IOS_TARGET" ]] && args+=(--target "$IOS_TARGET")
@@ -170,7 +151,7 @@ main() {
   log_step "flutter ${args[*]}"
   flutter "${args[@]}"
 
-  # 6. CocoaPods
+  # 5. CocoaPods
   if [[ -f ios/Podfile ]]; then
     install_cocoapods
     log_step "pod install"
@@ -180,7 +161,7 @@ main() {
     log_info "No ios/Podfile; skipping pod install (Swift Package Manager)."
   fi
 
-  # 7. State for ci_post_xcodebuild.sh
+  # 6. State for ci_post_xcodebuild.sh
   mkdir -p "$(dirname "$STATE_FILE")"
   {
     print_context

@@ -125,11 +125,16 @@ set_yq() { yq -i e "$1" "$CFG"; }
   [[ "$output" == *"iOS builds go to TestFlight only"* ]]
 }
 
-@test "invalid ios build setting name" {
-  set_yq '.environments.uat.ios.build_settings."bad-key" = "x"'
+@test "removed ios keys point to flavors" {
+  set_yq '.environments.uat.ios.display_name = "X" | .environments.uat.ios.app_icon = "AppIcon-UAT" | .environments.prod.ios.google_service_info = "a.plist" | .environments.prod.ios.build_settings = {"A": 1}'
   run "$SCRIPTS/read_config.sh" validate "$CFG"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"'bad-key' is not a valid build setting name"* ]]
+  [[ "$output" == *"environments.uat.ios.display_name was removed"* ]]
+  [[ "$output" == *"environments.uat.ios.app_icon was removed"* ]]
+  [[ "$output" == *"environments.prod.ios.google_service_info was removed"* ]]
+  [[ "$output" == *"environments.prod.ios.build_settings was removed"* ]]
+  [[ "$output" == *"use an Xcode flavor (ios.flavor)"* ]]
+  [[ "$output" != *"unknown key"* ]]
 }
 
 @test "build_args: valid flags pass" {
@@ -219,8 +224,8 @@ set_yq() { yq -i e "$1" "$CFG"; }
   printf 'name: x\nversion: 1.2.3+7\n' >"$TMP/pubspec.yaml"
   "$SCRIPTS/context.sh" "$TMP" .ci/config.yaml v1.2.3-beta.4 ios >"$TMP/ctx.env"
   source "$TMP/ctx.env"
-  [ "$IOS_DISPLAY_NAME" = "MyApp UAT" ]
-  [ "$IOS_APP_ICON" = "AppIcon-UAT" ]
+  [ "$IOS_FLAVOR" = "uatScheme" ]
+  [ "$IOS_TARGET" = "lib/main_uat.dart" ]
   [ -z "${FIREBASE_ENABLED:-}" ]
 }
 

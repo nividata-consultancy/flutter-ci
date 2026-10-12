@@ -26,11 +26,6 @@ environments:
       enabled: true                   # false = UAT tags stop the iOS build at once (shows as failed in Xcode Cloud)
       # flavor: westWind              # only for apps with one Xcode scheme per flavor (docs/IOS_SETUP.md)
       # target: lib/main.dart
-      # Optional, needs the one-time Xcode setup in docs/IOS_SETUP.md:
-      # display_name: "MyApp UAT"
-      # app_icon: AppIcon-UAT
-      # google_service_info: ios/config/uat/GoogleService-Info.plist
-      # build_settings: { SOME_SETTING: value }
 
   prod:
     # build_args: ["--dart-define-from-file=env/prod.json"]
@@ -44,6 +39,3 @@ environments:
         drive:     { enabled: false, folder_id: "SHARED_DRIVE_FOLDER_ID" }
     ios:
       enabled: true
-      # display_name: "MyApp"
-      # app_icon: AppIcon
-      # google_service_info: ios/config/prod/GoogleService-Info.plist

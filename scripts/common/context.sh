@@ -8,7 +8,7 @@
 #   - prints KEY=VALUE lines (shell-quoted, safe to `source`)
 #   - on GitHub also writes every key to $GITHUB_OUTPUT
 #
-# Paths in the output (IOS_GOOGLE_SERVICE_INFO) are relative to <app-root>. <config-path> is relative to <app-root> unless absolute.
+# <config-path> is relative to <app-root> unless absolute.
 
 _CONTEXT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/common/parse_tag.sh
@@ -134,9 +134,6 @@ resolve_context() {
   else
     local i="$e.ios"
     _ctx IOS_ENABLED "$(cfg "$i.enabled" true)"
-    _ctx IOS_DISPLAY_NAME "$(cfg "$i.display_name")"
-    _ctx IOS_APP_ICON "$(cfg "$i.app_icon")"
-    _ctx IOS_GOOGLE_SERVICE_INFO "$(cfg "$i.google_service_info")"
     _ctx IOS_TARGET "$(cfg "$i.target")"
     _ctx IOS_FLAVOR "$(cfg "$i.flavor")"
   fi
