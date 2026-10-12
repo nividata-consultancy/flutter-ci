@@ -6,6 +6,23 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-12
+
+Breaking: see "v1 → v2" in `docs/maintainers/MAINTAINING.md#migrations`.
+
+### Added
+- `environments.<env>.build_args`: extra `flutter build` flags (e.g.
+  `--no-tree-shake-icons`) for that environment, on Android and iOS. Flags flutter-ci
+  sets itself are refused. See "Extra build flags" in `docs/CONFIG_REFERENCE.md`.
+
+### Removed
+- `environments.<env>.dart_define_file`. Pass the file in `build_args` instead:
+  `build_args: ["--dart-define-from-file=env/uat.json"]`. A config that still has
+  `dart_define_file` fails validation, and the error shows the replacement line.
+- The `DART_DEFINES_<ENV>_JSON` (GitHub) and `DART_DEFINES_<ENV>_JSON_BASE64` (Xcode
+  Cloud) secrets are no longer read; commit the JSON instead. The reusable workflow
+  still accepts the two GitHub secrets, so older app workflows don't fail to parse.
+
 ## [1.4.0] - 2026-10-11
 
 ### Added

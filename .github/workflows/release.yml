@@ -1,6 +1,6 @@
 # Releases flutter-ci itself. Push a tag vX.Y.Z (after updating CHANGELOG.md)
 # and this workflow creates the GitHub Release and moves the major tag
-# (v1 -> newest v1.x.y) that all apps track.
+# (e.g. v2 -> newest v2.x.y) that all apps track.
 name: release
 
 on:

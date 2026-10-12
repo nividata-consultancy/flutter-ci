@@ -15,8 +15,8 @@ teardown() { teardown_tmp; }
   [[ "$output" != *"--obfuscate"* ]]
 }
 
-@test "build args with flavor, target and defines" {
-  FLAVOR=uat TARGET=lib/main_uat.dart DART_DEFINE_PATH=/tmp/d.json \
+@test "build args with flavor and target" {
+  FLAVOR=uat TARGET=lib/main_uat.dart \
     BUILD_NAME=1.4.0 BUILD_NUMBER=1 FLUTTER_CI_PRINT_ARGS=1 run "$ANDROID/build.sh"
   [ "$status" -eq 0 ]
   [ "${lines[0]}" = "--release" ]
@@ -24,8 +24,16 @@ teardown() { teardown_tmp; }
   [ "${lines[2]}" = "uat" ]
   [ "${lines[3]}" = "--target" ]
   [ "${lines[4]}" = "lib/main_uat.dart" ]
-  [[ "$output" == *"--dart-define-from-file=/tmp/d.json"* ]]
   [[ "$output" != *"--obfuscate"* ]]
+}
+
+@test "build args: extra flags from the config go last, one per argument" {
+  BUILD_ARGS=$'--dart-define-from-file=env/uat.json\n--dart-define=A=b c' \
+    BUILD_NAME=1.4.0 BUILD_NUMBER=1 FLUTTER_CI_PRINT_ARGS=1 run "$ANDROID/build.sh"
+  [ "$status" -eq 0 ]
+  [ "${lines[3]}" = "--dart-define-from-file=env/uat.json" ]
+  [ "${lines[4]}" = "--dart-define=A=b c" ]
+  [ "${#lines[@]}" -eq 5 ]
 }
 
 @test "resolve: version and build number come from pubspec" {
@@ -110,22 +118,4 @@ teardown() { teardown_tmp; }
     run "$ANDROID/signing.sh" write
   [ "$status" -eq 1 ]
   [[ "$output" == *"is committed to git"* ]]
-}
-
-@test "dart defines: committed file, secret, and missing" {
-  mkdir -p "$TMP/app/env" && cd "$TMP/app"
-  echo '{"A":"1"}' > env/uat.json
-  run "$SCRIPTS/dart_defines.sh" . uat env/uat.json
-  [ "$status" -eq 0 ]
-  [[ "$output" == */env/uat.json ]]
-  RUNNER_TEMP="$TMP/rt" DART_DEFINES_PROD_JSON='{"B":"2"}' run "$SCRIPTS/dart_defines.sh" . prod env/prod.json
-  [ "$status" -eq 0 ]
-  [ "$(cat "${lines[${#lines[@]}-1]}")" = '{"B":"2"}' ]
-  RUNNER_TEMP="$TMP/rt" DART_DEFINES_PROD_JSON_BASE64="$(printf '{"C":"3"}' | base64)" run "$SCRIPTS/dart_defines.sh" . prod
-  [ "$(cat "${lines[${#lines[@]}-1]}")" = '{"C":"3"}' ]
-  run "$SCRIPTS/dart_defines.sh" . prod env/prod.json
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"is not in the repo"* ]]
-  DART_DEFINES_PROD_JSON='not json' run "$SCRIPTS/dart_defines.sh" . prod
-  [ "$status" -eq 1 ]
 }

@@ -1,4 +1,4 @@
-# flutter-ci project config — schema: https://github.com/nividata-consultancy/flutter-ci/blob/v1/docs/CONFIG_REFERENCE.md
+# flutter-ci project config — schema: https://github.com/nividata-consultancy/flutter-ci/blob/v2/docs/CONFIG_REFERENCE.md
 version: 1
 
 app:
@@ -13,7 +13,7 @@ app:
 
 environments:
   uat:
-    # dart_define_file: env/uat.json  # optional: --dart-define-from-file (or the DART_DEFINES_UAT_JSON secret)
+    # build_args: ["--dart-define-from-file=env/uat.json"]  # optional: extra flutter build flags (Android and iOS)
     android:
       enabled: true                   # false = UAT tags build nothing on Android
       # flavor: uat                   # only if android/app/build.gradle defines productFlavors
@@ -33,7 +33,7 @@ environments:
       # build_settings: { SOME_SETTING: value }
 
   prod:
-    # dart_define_file: env/prod.json
+    # build_args: ["--dart-define-from-file=env/prod.json"]
     android:
       enabled: true
       destinations:

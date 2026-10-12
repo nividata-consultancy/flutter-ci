@@ -7,12 +7,12 @@
 #     app.prod_branches is set).
 #  3. Install Flutter at the app's pinned version, precache, pub get, and the
 #     FlutterFire CLI if a Crashlytics build phase needs it.
-#  4. Dart defines from the repo or DART_DEFINES_<ENV>_JSON_BASE64.
-#  5. Generate ios/Flutter/Environment.xcconfig, copy GoogleService-Info.plist.
-#  6. flutter build ios --config-only (version + build number from pubspec.yaml,
-#     dart defines into Generated.xcconfig).
-#  7. pod install (when the app uses CocoaPods).
-#  8. Save the parsed values to .flutter-ci/state.env for ci_post_xcodebuild.sh.
+#  4. Generate ios/Flutter/Environment.xcconfig, copy GoogleService-Info.plist.
+#  5. flutter build ios --config-only (version + build number from pubspec.yaml,
+#     environments.<env>.build_args such as --dart-define-from-file into
+#     Generated.xcconfig).
+#  6. pod install (when the app uses CocoaPods).
+#  7. Save the parsed values to .flutter-ci/state.env for ci_post_xcodebuild.sh.
 #
 # Optional env (Xcode Cloud workflow → Environment):
 #   FLUTTER_CI_APP_DIR      app root inside the repo (default: .)
@@ -25,8 +25,6 @@ FLUTTER_CI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$FLUTTER_CI_DIR/scripts/common/context.sh"
 # shellcheck source=scripts/common/prod_guard.sh
 source "$FLUTTER_CI_DIR/scripts/common/prod_guard.sh"
-# shellcheck source=scripts/common/dart_defines.sh
-source "$FLUTTER_CI_DIR/scripts/common/dart_defines.sh"
 # shellcheck source=scripts/common/ios_xcconfig.sh
 source "$FLUTTER_CI_DIR/scripts/common/ios_xcconfig.sh"
 # shellcheck source=scripts/common/notify_slack.sh
@@ -142,11 +140,7 @@ main() {
     flutterfire --version || true
   fi
 
-  # 4. Dart defines
-  local defines
-  defines="$(resolve_dart_defines . "$ENVIRONMENT" "$DART_DEFINE_FILE")" || exit 1
-
-  # 5. Environment.xcconfig + GoogleService-Info.plist
+  # 4. Environment.xcconfig + GoogleService-Info.plist
   log_step "Generating ios/Flutter/Environment.xcconfig"
   ios_xcconfig "$CONFIG_PATH" "$ENVIRONMENT" >ios/Flutter/Environment.xcconfig
   cat ios/Flutter/Environment.xcconfig
@@ -162,16 +156,21 @@ main() {
     log_info "Copied $IOS_GOOGLE_SERVICE_INFO to ios/Runner/GoogleService-Info.plist"
   fi
 
-  # 6. flutter build ios --config-only
+  # 5. flutter build ios --config-only
   local args=(build ios --config-only --release --no-codesign
     "--build-name=$APP_VERSION" "--build-number=$build_number")
-  [[ -n "$defines" ]] && args+=("--dart-define-from-file=$defines")
   [[ -n "$IOS_TARGET" ]] && args+=(--target "$IOS_TARGET")
   [[ -n "$IOS_FLAVOR" ]] && args+=(--flavor "$IOS_FLAVOR")
+  # Extra flags (environments.<env>.build_args) land in Generated.xcconfig,
+  # which the Xcode archive reads.
+  local arg
+  while IFS= read -r arg; do
+    [[ -n "$arg" ]] && args+=("$arg")
+  done <<<"${BUILD_ARGS:-}"
   log_step "flutter ${args[*]}"
   flutter "${args[@]}"
 
-  # 7. CocoaPods
+  # 6. CocoaPods
   if [[ -f ios/Podfile ]]; then
     install_cocoapods
     log_step "pod install"
@@ -181,7 +180,7 @@ main() {
     log_info "No ios/Podfile; skipping pod install (Swift Package Manager)."
   fi
 
-  # 8. State for ci_post_xcodebuild.sh
+  # 7. State for ci_post_xcodebuild.sh
   mkdir -p "$(dirname "$STATE_FILE")"
   {
     print_context

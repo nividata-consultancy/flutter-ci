@@ -8,8 +8,7 @@
 #   - prints KEY=VALUE lines (shell-quoted, safe to `source`)
 #   - on GitHub also writes every key to $GITHUB_OUTPUT
 #
-# Paths in the output (DART_DEFINE_FILE, IOS_GOOGLE_SERVICE_INFO) are relative
-# to <app-root>. <config-path> is relative to <app-root> unless absolute.
+# Paths in the output (IOS_GOOGLE_SERVICE_INFO) are relative to <app-root>. <config-path> is relative to <app-root> unless absolute.
 
 _CONTEXT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/common/parse_tag.sh
@@ -96,7 +95,8 @@ resolve_context() {
   _ctx PROD_BRANCHES "$branches"
   _ctx RUN_TESTS "$(cfg '.app.run_tests' false)"
   _ctx RUN_ANALYZE "$(cfg '.app.run_analyze' false)"
-  _ctx DART_DEFINE_FILE "$(cfg "$e.dart_define_file")"
+  # One flag per line.
+  _ctx BUILD_ARGS "$(cfg_list "$e.build_args")"
 
   if [[ "$platform" == "android" ]]; then
     local a="$e.android"

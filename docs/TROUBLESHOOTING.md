@@ -7,7 +7,7 @@ Most end with a link to a section on this page. After fixing, always push a **ne
 
 | What you see | Cause and fix |
 |---|---|
-| GitHub: "Invalid workflow file … secret X is not defined in the referenced workflow" | The app passes a secret that the flutter-ci version it uses doesn't know yet. Check that `@v1` is up to date, or remove that line from the app's `release.yml`. |
+| GitHub: "Invalid workflow file … secret X is not defined in the referenced workflow" | The app passes a secret that the flutter-ci version it uses doesn't know yet. Check that `@v2` is up to date, or remove that line from the app's `release.yml`. |
 | GitHub: a failed run on every push | Usually an invalid workflow file (see above). GitHub then can't read the triggers. flutter-ci's template only starts on tags. |
 | GitHub: a run on a commit | Another workflow file in the app's `.github/workflows/` starts on push. flutter-ci runs show the **tag** as their branch. |
 | Xcode Cloud: a build on every commit | The workflow still has **Branch Changes**, or a leftover **Default** workflow exists. Remove them ([IOS_SETUP.md](IOS_SETUP.md#step-5-create-the-xcode-cloud-workflow)). |
@@ -58,7 +58,7 @@ Xcode Cloud: the scripts don't run, or you see `zsh` errors, `permission denied`
   Settings, set **User Script Sandboxing** (`ENABLE_USER_SCRIPT_SANDBOXING`) to **No**.
 - **`flutterfire: command not found`** (the build phase *FlutterFire: "flutterfire
   upload-crashlytics-symbols"*): since v1.3.1, flutter-ci installs the FlutterFire CLI
-  automatically when the Xcode project has this phase. On older versions, update `v1`.
+  automatically when the Xcode project has this phase. On older versions, update `v2`.
 - **Crashlytics / other custom scripts:** a missing `GoogleService-Info.plist` on CI.
   Commit it, or set `google_service_info` in the config.
 

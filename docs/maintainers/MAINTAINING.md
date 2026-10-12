@@ -33,10 +33,10 @@ Android build of `example/` through `android-release.yml` at that commit.
 ## Versions
 
 - Releases are `vX.Y.Z`, each with a section in [CHANGELOG.md](../../CHANGELOG.md).
-- The **major tag** `v1` points to the newest `v1.x.y`. Every app tracks it
-  (`@v1` + `ci-lib-ref: v1`, and `FLUTTER_CI_REF=v1`).
-- **Non-breaking** changes (fixes, new *optional* keys, inputs or secrets) ship as `v1.x.y`.
-- **Breaking** changes ship as `v2.0.0`: a new required input/secret/key, a config
+- The **major tag** `v2` points to the newest `v2.x.y`. Every app tracks it
+  (`@v2` + `ci-lib-ref: v2`, and `FLUTTER_CI_REF=v2`). `v1` stays where it is.
+- **Non-breaking** changes (fixes, new *optional* keys, inputs or secrets) ship as `v2.x.y`.
+- **Breaking** changes ship as `v3.0.0`: a new required input/secret/key, a config
   schema change, a different tag format, or anything removed or renamed. Add a
   [Migrations](#migrations) entry.
 
@@ -48,12 +48,12 @@ Android build of `example/` through `android-release.yml` at that commit.
 3. Optional: check on a canary app (below).
 4. Tag the same commit and push the tag:
    ```bash
-   git tag -a v1.3.0 -m "flutter-ci v1.3.0" && git push origin v1.3.0
+   git tag -a v2.0.1 -m "flutter-ci v2.0.1" && git push origin v2.0.1
    ```
-5. `release.yml` checks the tag (on `main`, has a changelog section, newest `v1.x.y`),
-   creates the GitHub Release and moves `v1`. From then on, every app's next build uses it.
+5. `release.yml` checks the tag (on `main`, has a changelog section, newest `v2.x.y`),
+   creates the GitHub Release and moves `v2`. From then on, every app's next build uses it.
 
-**Rollback:** `git tag -f v1 v1.2.0 && git push -f origin v1`, then fix forward with a new version.
+**Rollback:** `git tag -f v2 v2.0.0 && git push -f origin v2`, then fix forward with a new version.
 
 ## Canary apps
 
@@ -86,8 +86,7 @@ Then update every app's `uses:` line.
 
 ## Migrations
 
-Breaking changes, newest first, with the exact steps for app repos. There are none yet;
-v1 is the first major version. Use this format:
+Breaking changes, newest first, with the exact steps for app repos. Use this format:
 
 ```
 ### v1 → v2
@@ -97,3 +96,22 @@ v1 is the first major version. Use this format:
   2. Xcode Cloud: FLUTTER_CI_REF=v2
   3. .ci/config.yaml: …
 ```
+
+### v1 → v2
+- `environments.<env>.dart_define_file` was removed. Flutter build flags, including the
+  dart defines file, now go in the new `environments.<env>.build_args` list (Android
+  and iOS). The `DART_DEFINES_<ENV>_JSON` / `_JSON_BASE64` secrets are no longer read:
+  the JSON must be committed. A v2 build with `dart_define_file` still in the config
+  fails, and the error shows the replacement line.
+- App repo changes:
+  1. `.ci/config.yaml`, under each environment: replace
+     `dart_define_file: env/uat.json` with
+     `build_args: ["--dart-define-from-file=env/uat.json"]`. Add other flags to the same
+     list, e.g. `"--no-tree-shake-icons"`.
+  2. If the defines lived only in the `DART_DEFINES_*` secrets: commit them as
+     `env/uat.json` / `env/prod.json`.
+  3. `.github/workflows/release.yml`: `@v1` → `@v2`, `ci-lib-ref: v2`, and delete the
+     `DART_DEFINES_UAT_JSON` / `DART_DEFINES_PROD_JSON` lines.
+  4. Xcode Cloud, every workflow: `FLUTTER_CI_REF` = `v2`; delete
+     `DART_DEFINES_UAT_JSON_BASE64` / `DART_DEFINES_PROD_JSON_BASE64`.
+  5. GitHub → Settings → Secrets: delete `DART_DEFINES_UAT_JSON` / `DART_DEFINES_PROD_JSON`.

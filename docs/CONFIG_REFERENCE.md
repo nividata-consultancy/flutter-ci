@@ -28,7 +28,7 @@ app:
 
 environments:
   uat:
-    dart_define_file: env/uat.json
+    build_args: ["--dart-define-from-file=env/uat.json"]
     android:
       enabled: true
       destinations:
@@ -39,7 +39,7 @@ environments:
       enabled: true
 
   prod:
-    dart_define_file: env/prod.json
+    build_args: ["--dart-define-from-file=env/prod.json"]
     android:
       enabled: true
       destinations:
@@ -91,7 +91,7 @@ Only `uat` (tags `vX.Y.Z-beta.N`) and `prod` (tags `vX.Y.Z`) are allowed.
 
 | Key | Description |
 |---|---|
-| `dart_define_file` | Optional JSON file passed as `--dart-define-from-file`. See [Dart defines](#dart-defines). |
+| `build_args` | Optional extra `flutter build` flags for this environment, Android and iOS, including `--dart-define-from-file`. See [Extra build flags](#extra-build-flags). |
 | `android` | See [Android](#android) |
 | `ios` | See [iOS](#ios) |
 
@@ -105,14 +105,28 @@ The default is `true`.
 | Android | The GitHub job ends at once, **green**, with "Android is disabled". Nothing is built or uploaded. |
 | iOS | The Xcode Cloud build stops in about a minute with "iOS is disabled…" and shows as **failed**. Nothing goes to TestFlight. Apple can't skip a tag build, so red is expected. |
 
-## Dart defines
+## Extra build flags
 
-Order of precedence:
-1. `dart_define_file`, if the file is committed in the repo.
-2. Secret `DART_DEFINES_<ENV>_JSON` (GitHub) or `DART_DEFINES_<ENV>_JSON_BASE64` (Xcode Cloud).
-3. None: the build continues without dart defines, with a warning.
+`environments.<env>.build_args` adds flags to that environment's `flutter build`, on
+Android and iOS. It's only allowed at the environment level.
 
-If `dart_define_file` is set but neither 1 nor 2 exists, the build fails.
+```yaml
+environments:
+  uat:
+    build_args: ["--dart-define-from-file=env/uat.json", "--no-tree-shake-icons"]
+```
+
+- One flag per item. A flag with a value is one item: `"--dart-define=KEY=some value"`.
+- Flags flutter-ci already sets are refused: `--release`/`--debug`/`--profile`,
+  `--flavor`, `--target`/`-t`, `--build-name`, `--build-number`, `--config-only`,
+  `--codesign`/`--no-codesign`. Use the matching config key instead. `--obfuscate` is
+  refused too.
+- **Dart defines:** `"--dart-define-from-file=env/uat.json"`. The path is relative to
+  the app root, and the file must be committed (Flutter fails the build if it's
+  missing). Secrets like `DART_DEFINES_<ENV>_JSON` are not used.
+- On iOS the flags go to `flutter build ios --config-only` in Xcode Cloud, which writes
+  them to `Generated.xcconfig` for the archive. Flags that only change the Dart build
+  (`--no-tree-shake-icons`, `--dart-define`, `--split-debug-info`) work there.
 
 ## Android
 

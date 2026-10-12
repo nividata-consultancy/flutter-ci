@@ -28,7 +28,7 @@ app:
   android_package_name: com.example.myapp
 environments:
   uat:
-    dart_define_file: env/uat.json
+    build_args: ["--dart-define-from-file=env/uat.json"]
     android:
       flavor: uat
       target: lib/main.dart
@@ -43,7 +43,7 @@ environments:
       build_settings:
         MY_SETTING: "abc"
   prod:
-    dart_define_file: env/prod.json
+    build_args: ["--dart-define-from-file=env/prod.json"]
     android:
       destinations:
         playstore: { enabled: true, tracks: [internal, production] }

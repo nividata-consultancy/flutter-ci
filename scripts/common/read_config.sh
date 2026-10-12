@@ -131,6 +131,30 @@ _cfg_validate_folder_id() {
   fi
 }
 
+# _cfg_validate_build_args <path> <label> — extra `flutter build` flags.
+# Flags flutter-ci sets itself are refused so they can't conflict.
+_cfg_validate_build_args() {
+  local path="$1" label="$2" arg t name
+  _cfg_expect_type "$path" "$label" '!!seq' || return 0
+  while IFS= read -r t; do
+    [[ "$t" == '!!str' ]] || _cfg_err "$label: every item must be a string like \"--no-tree-shake-icons\" (got ${t#!!})"
+  done < <(yq e "($path) | .[] | type" "$FLUTTER_CI_CONFIG")
+  while IFS= read -r arg; do
+    if [[ "$arg" != -* ]]; then
+      _cfg_err "$label: '$arg' is not a flag (write one flag per item, e.g. \"--split-debug-info=build/symbols\")"
+      continue
+    fi
+    name="${arg%%=*}"
+    case "$name" in
+      --release | --debug | --profile | --flavor | --target | -t | --build-name | --build-number \
+        | --config-only | --codesign | --no-codesign)
+        _cfg_err "$label: '$name' is set by flutter-ci; use the matching config key instead (see CONFIG_REFERENCE.md)" ;;
+      --obfuscate)
+        _cfg_err "$label: '--obfuscate' is not supported (obfuscated crash reports can't be read without the symbols)" ;;
+    esac
+  done < <(yq e "($path) | .[] | select(type == \"!!str\")" "$FLUTTER_CI_CONFIG")
+}
+
 _cfg_validate_android() {
   local env="$1" p=".environments.$1.android" label="environments.$1.android"
   _cfg_expect_type "$p" "$label" '!!map' || return 0
@@ -339,11 +363,12 @@ validate_config() {
           _cfg_err "environments.$env must be a mapping"
           continue
         fi
-        _cfg_known_keys ".environments.$env" "environments.$env" dart_define_file android ios
-        if _cfg_expect_type ".environments.$env.dart_define_file" "environments.$env.dart_define_file" '!!str'; then
-          [[ "$(cfg ".environments.$env.dart_define_file")" == *.json ]] \
-            || _cfg_err "environments.$env.dart_define_file must point to a .json file"
+        _cfg_known_keys ".environments.$env" "environments.$env" dart_define_file build_args android ios
+        # Removed: dart defines are passed as a build_args flag now.
+        if cfg_has ".environments.$env.dart_define_file"; then
+          _cfg_err "environments.$env.dart_define_file was removed. Use build_args: [\"--dart-define-from-file=$(cfg ".environments.$env.dart_define_file")\"] instead"
         fi
+        _cfg_validate_build_args ".environments.$env.build_args" "environments.$env.build_args"
         _cfg_validate_android "$env"
         _cfg_validate_ios "$env"
       done

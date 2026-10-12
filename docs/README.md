@@ -36,5 +36,5 @@ push tag v1.4.0-beta.1
 ```
 
 - `-beta.N` tags build **UAT**; plain `vX.Y.Z` tags build **prod**.
-- Apps use flutter-ci **`v1`**, which always points to the newest `v1.x.y`, so fixes reach
+- Apps use flutter-ci **`v2`**, which always points to the newest `v2.x.y`, so fixes reach
   every app automatically.

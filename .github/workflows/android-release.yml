@@ -18,7 +18,7 @@ on:
       ci-lib-ref:
         description: Ref of flutter-ci to use for actions/scripts. Keep it equal to the @ref of this workflow.
         type: string
-        default: v1
+        default: v2
       ci-lib-repository:
         description: Repository of flutter-ci (change only for forks).
         type: string
@@ -81,11 +81,13 @@ on:
       GDRIVE_OAUTH_REFRESH_TOKEN:
         description: Google OAuth refresh token (drive destination, upload as your own account).
         required: false
+      # Kept so older app workflows that still pass them don't fail; no longer
+      # used. Dart defines are passed with environments.<env>.build_args.
       DART_DEFINES_UAT_JSON:
-        description: UAT dart defines JSON, when env/uat.json is not committed.
+        description: No longer used (use build_args with --dart-define-from-file).
         required: false
       DART_DEFINES_PROD_JSON:
-        description: Prod dart defines JSON, when env/prod.json is not committed.
+        description: No longer used (use build_args with --dart-define-from-file).
         required: false
       SLACK_WEBHOOK_URL:
         description: Slack incoming webhook for notifications.
@@ -195,18 +197,6 @@ jobs:
         if: ${{ steps.ctx.outputs.ANDROID_ENABLED == 'true' && steps.ctx.outputs.RUN_ANALYZE == 'true' }}
         run: flutter analyze
 
-      - name: Resolve dart defines
-        id: defines
-        if: steps.ctx.outputs.ANDROID_ENABLED == 'true'
-        env:
-          DART_DEFINES_UAT_JSON: ${{ steps.ctx.outputs.ENVIRONMENT == 'uat' && secrets.DART_DEFINES_UAT_JSON || '' }}
-          DART_DEFINES_PROD_JSON: ${{ steps.ctx.outputs.ENVIRONMENT == 'prod' && secrets.DART_DEFINES_PROD_JSON || '' }}
-          ENVIRONMENT: ${{ steps.ctx.outputs.ENVIRONMENT }}
-          CONFIGURED: ${{ steps.ctx.outputs.DART_DEFINE_FILE }}
-        run: |
-          path="$("$FLUTTER_CI/scripts/common/dart_defines.sh" . "$ENVIRONMENT" "$CONFIGURED")"
-          echo "path=$path" >> "$GITHUB_OUTPUT"
-
       - name: Write signing config
         if: steps.ctx.outputs.ANDROID_ENABLED == 'true'
         uses: ./.flutter-ci/actions/android-signing
@@ -226,7 +216,7 @@ jobs:
           ARTIFACTS: ${{ steps.ctx.outputs.ANDROID_ARTIFACTS }}
           FLAVOR: ${{ steps.ctx.outputs.ANDROID_FLAVOR }}
           TARGET: ${{ steps.ctx.outputs.ANDROID_TARGET }}
-          DART_DEFINE_PATH: ${{ steps.defines.outputs.path }}
+          BUILD_ARGS: ${{ steps.ctx.outputs.BUILD_ARGS }}
           BUILD_NAME: ${{ steps.ctx.outputs.APP_VERSION }}
           BUILD_NUMBER: ${{ steps.ctx.outputs.BUILD_NUMBER }}
           APP_NAME: ${{ steps.ctx.outputs.APP_NAME }}

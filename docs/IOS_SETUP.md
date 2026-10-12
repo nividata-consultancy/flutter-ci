@@ -99,7 +99,7 @@ In Xcode: **Integrate → Create Workflow…** (menu bar at the top).
 | Sidebar | What to set |
 |---|---|
 | **General** | Name: `Release (tags)` |
-| **Environment** | **Xcode Version:** the same version you use (not "Latest") · **Clean:** ✅ · **Environment Variables → +:** `FLUTTER_CI_REF` = `v1` |
+| **Environment** | **Xcode Version:** the same version you use (not "Latest") · **Clean:** ✅ · **Environment Variables → +:** `FLUTTER_CI_REF` = `v2` |
 | **START CONDITIONS** | Delete **Branch Changes**. Add **Tag Changes** → **Custom Tags** → **+** → **Tags Beginning With** → `v` |
 | **ACTIONS** | Delete **Build**. Add **Archive** → Platform **iOS** · Scheme **Runner** ([flavor apps](#apps-with-flavors): the flavor's scheme) · Distribution Preparation **App Store** (older Xcode: "TestFlight and App Store"; never **None**) |
 | **POST-ACTIONS** | Add **TestFlight Internal Testing** → Groups **+** → `QA`. Greyed out? Save first, and check that the `QA` group (Step 4) and the app exist in App Store Connect. |
@@ -114,10 +114,6 @@ Delete any **Default** workflow; it would build on every commit.
 **Only if the app is in a subfolder of the repo:** add `FLUTTER_CI_APP_DIR` = the folder
 (e.g. `my_app`). **Only if the config file isn't `.ci/config.yaml`:** add
 `FLUTTER_CI_CONFIG_PATH` (relative to that folder, e.g. `.ci/juna_bhajan.yaml`).
-
-**Only if `env/uat.json` / `env/prod.json` are not in git:** add the environment variables
-`DART_DEFINES_UAT_JSON_BASE64` and `DART_DEFINES_PROD_JSON_BASE64` with ✅ **Secret**. Get
-each value with `base64 -i env/uat.json | pbcopy`.
 
 ## Step 6: First build
 
@@ -206,7 +202,7 @@ a separate app with its own config file (see
    App Store Connect, with:
    - **Archive → Scheme:** the flavor's scheme (e.g. `westWind`), not `Runner`;
    - **Environment Variables:** `FLUTTER_CI_CONFIG_PATH` = that flavor's config
-     (e.g. `.ci/west_wind.yaml`), plus `FLUTTER_CI_REF` = `v1`.
+     (e.g. `.ci/west_wind.yaml`), plus `FLUTTER_CI_REF` = `v2`.
 
 If the workflow's scheme and `ios.flavor` don't match, the build stops early and says so.
 Every flavor's workflow starts on every tag.

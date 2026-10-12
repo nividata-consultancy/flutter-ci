@@ -10,7 +10,7 @@ app:
 
 environments:
   uat:
-    dart_define_file: env/uat.json
+    build_args: ["--dart-define-from-file=env/uat.json"]
     android:
       destinations:
         playstore: { enabled: true, tracks: [internal] }
@@ -18,7 +18,7 @@ environments:
       display_name: "Example UAT"
       app_icon: AppIcon-UAT
   prod:
-    dart_define_file: env/prod.json
+    build_args: ["--dart-define-from-file=env/prod.json"]
     android:
       destinations:
         playstore: { enabled: true, tracks: [internal] }

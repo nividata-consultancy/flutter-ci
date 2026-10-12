@@ -54,7 +54,7 @@ Open `.ci/config.yaml` and change only these:
 | `app.android_package_name` | Your applicationId: `grep applicationId android/app/build.gradle*` |
 | `version:` in **pubspec.yaml** (not in the config) | `X.Y.Z+N`, e.g. `version: 1.0.0+101`. The build number `N` must be **higher** than every version code already on Play (Play Console → App bundle explorer). |
 | `app.run_tests` / `app.run_analyze` | Both `false` by default. Set `true` only if `flutter test` passes / `flutter analyze` says "No issues found!". A failure stops the build. |
-| `dart_define_file` | Uncomment it if you have `env/uat.json` / `env/prod.json` |
+| `build_args` | Uncomment it if you have `env/uat.json` / `env/prod.json` (committed), or need flags like `--no-tree-shake-icons` |
 | `android.flavor` | Only if your Gradle file has `productFlavors` |
 
 Leave `destinations` as it is for now; Step 5 covers it.
@@ -343,14 +343,14 @@ their own names:
 ```yaml
 jobs:
   juna_bhajan:
-    uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v1
-    with: { ci-lib-ref: v1, config-path: .ci/juna_bhajan.yaml }   # app in a subfolder: add app-directory: my_app
+    uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v2
+    with: { ci-lib-ref: v2, config-path: .ci/juna_bhajan.yaml }   # app in a subfolder: add app-directory: my_app
     secrets:
       FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID_JUNA_BHAJAN }}
       # … the other secrets as in the template
   hindi_bhajan:
-    uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v1
-    with: { ci-lib-ref: v1, config-path: .ci/hindi_bhajan.yaml }
+    uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v2
+    with: { ci-lib-ref: v2, config-path: .ci/hindi_bhajan.yaml }
     secrets:
       FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID_HINDI_BHAJAN }}
       # … the other secrets as in the template

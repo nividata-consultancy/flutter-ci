@@ -132,6 +132,62 @@ set_yq() { yq -i e "$1" "$CFG"; }
   [[ "$output" == *"'bad-key' is not a valid build setting name"* ]]
 }
 
+@test "build_args: valid flags pass" {
+  set_yq '.environments.uat.build_args = ["--no-tree-shake-icons", "--dart-define=A=b c"]'
+  run "$SCRIPTS/read_config.sh" validate "$CFG" uat
+  [ "$status" -eq 0 ]
+}
+
+@test "build_args: refuses non-lists, non-flags and managed flags" {
+  set_yq '.environments.prod.build_args = "--no-tree-shake-icons"'
+  set_yq '.environments.uat.build_args = ["no-dash", "--flavor=x", "--obfuscate", "-t", 3]'
+  run "$SCRIPTS/read_config.sh" validate "$CFG"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"environments.prod.build_args must be a list"* ]]
+  [[ "$output" == *"'no-dash' is not a flag"* ]]
+  [[ "$output" == *"'--flavor' is set by flutter-ci"* ]]
+  [[ "$output" == *"'--obfuscate' is not supported"* ]]
+  [[ "$output" == *"'-t' is set by flutter-ci"* ]]
+  [[ "$output" == *"every item must be a string"* ]]
+}
+
+@test "dart_define_file was removed, with the build_args replacement" {
+  run "$SCRIPTS/read_config.sh" validate "$CFG"
+  [ "$status" -eq 0 ]
+  set_yq '.environments.uat.dart_define_file = "env/uat.json"'
+  run "$SCRIPTS/read_config.sh" validate "$CFG"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *'environments.uat.dart_define_file was removed. Use build_args: ["--dart-define-from-file=env/uat.json"] instead'* ]]
+  [[ "$output" != *"unknown key"* ]]
+}
+
+@test "build_args: only allowed at the environment level" {
+  set_yq '.app.build_args = ["--no-tree-shake-icons"] | .environments.uat.android.build_args = ["--no-tree-shake-icons"]'
+  run "$SCRIPTS/read_config.sh" validate "$CFG"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"app: unknown key 'build_args'"* ]]
+  [[ "$output" == *"environments.uat.android: unknown key 'build_args'"* ]]
+}
+
+@test "build_args: resolved for both platforms, one flag per line" {
+  printf '{"flutter": "3.24.5"}\n' >"$TMP/.fvmrc"
+  printf 'name: x\nversion: 1.2.3+7\n' >"$TMP/pubspec.yaml"
+  set_yq '.environments.uat.build_args = ["--no-tree-shake-icons", "--dart-define=A=b c"]'
+  local platform
+  for platform in android ios; do
+    "$SCRIPTS/context.sh" "$TMP" .ci/config.yaml v1.2.3-beta.4 "$platform" >"$TMP/ctx.env"
+    source "$TMP/ctx.env"
+    [ "$BUILD_ARGS" = $'--no-tree-shake-icons\n--dart-define=A=b c' ]
+  done
+  "$SCRIPTS/context.sh" "$TMP" .ci/config.yaml v1.2.3 android >"$TMP/ctx.env"
+  source "$TMP/ctx.env"
+  [ "$BUILD_ARGS" = "--dart-define-from-file=env/prod.json" ]
+  set_yq 'del(.environments.prod.build_args)'
+  "$SCRIPTS/context.sh" "$TMP" .ci/config.yaml v1.2.3 android >"$TMP/ctx.env"
+  source "$TMP/ctx.env"
+  [ -z "$BUILD_ARGS" ]
+}
+
 @test "get returns false booleans and empty for missing" {
   run "$SCRIPTS/read_config.sh" get "$CFG" '.app.run_analyze'
   [ "$output" = "false" ]

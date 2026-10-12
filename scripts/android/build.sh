@@ -2,8 +2,8 @@
 # Build the Android AAB and/or APK (run from the app root).
 #
 # Env (from resolve.sh outputs): ARTIFACTS ("aab apk"), FLAVOR, TARGET,
-#   DART_DEFINE_PATH, BUILD_NAME, BUILD_NUMBER, APP_NAME,
-#   ENVIRONMENT
+#   BUILD_NAME, BUILD_NUMBER, APP_NAME, ENVIRONMENT,
+#   BUILD_ARGS (extra flags from the config, one per line)
 # Optional: FLUTTER_CI_PRINT_ARGS=1 prints the flutter args and exits (tests).
 #
 # Copies outputs to build/flutter-ci-artifacts/ and writes AAB_PATH,
@@ -21,8 +21,9 @@ flutter_args() {
   printf '%s\n' --release
   [[ -n "${FLAVOR:-}" ]] && printf '%s\n' --flavor "$FLAVOR"
   [[ -n "${TARGET:-}" ]] && printf '%s\n' --target "$TARGET"
-  [[ -n "${DART_DEFINE_PATH:-}" ]] && printf '%s\n' "--dart-define-from-file=$DART_DEFINE_PATH"
   printf '%s\n' "--build-name=${BUILD_NAME:?BUILD_NAME not set}" "--build-number=${BUILD_NUMBER:?BUILD_NUMBER not set}"
+  [[ -n "${BUILD_ARGS:-}" ]] && printf '%s\n' "$BUILD_ARGS"
+  return 0
 }
 
 # _newest <dir> <pattern> — newest matching file newer than the build marker.

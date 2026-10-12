@@ -16,9 +16,9 @@ permissions:
 
 jobs:
   android:
-    uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v1
+    uses: nividata-consultancy/flutter-ci/.github/workflows/android-release.yml@v2
     with:
-      ci-lib-ref: v1 # keep equal to the @ref above
+      ci-lib-ref: v2 # keep equal to the @ref above
       # app-directory: .              # folder with pubspec.yaml, if the app is in a subfolder (e.g. my_app)
       # config-path: .ci/config.yaml  # relative to app-directory
       # dry-run: false
@@ -34,6 +34,4 @@ jobs:
       GDRIVE_OAUTH_CLIENT_ID: ${{ secrets.GDRIVE_OAUTH_CLIENT_ID }}
       GDRIVE_OAUTH_CLIENT_SECRET: ${{ secrets.GDRIVE_OAUTH_CLIENT_SECRET }}
       GDRIVE_OAUTH_REFRESH_TOKEN: ${{ secrets.GDRIVE_OAUTH_REFRESH_TOKEN }}
-      DART_DEFINES_UAT_JSON: ${{ secrets.DART_DEFINES_UAT_JSON }}
-      DART_DEFINES_PROD_JSON: ${{ secrets.DART_DEFINES_PROD_JSON }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
