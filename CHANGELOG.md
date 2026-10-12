@@ -6,6 +6,8 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-12
+
 ### Changed
 - Android: when Play is enabled, the APK is made from the AAB with `bundletool`
   1.18.3 (a universal APK, signed with the same upload key) instead of a second Gradle
