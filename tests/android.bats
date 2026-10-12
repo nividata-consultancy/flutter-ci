@@ -36,6 +36,18 @@ teardown() { teardown_tmp; }
   [ "${#lines[@]}" -eq 5 ]
 }
 
+@test "apk_from_aab: missing AAB or broken key.properties fails clearly" {
+  mkdir -p "$TMP/app/android" && cd "$TMP/app"
+  RUNNER_TEMP="$TMP/rt" run "$ANDROID/apk_from_aab.sh" missing.aab out.apk
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"No AAB at 'missing.aab'"* ]]
+  echo x > app.aab
+  printf 'storeFile=/nope.jks\nkeyAlias=upload\n' > android/key.properties
+  RUNNER_TEMP="$TMP/rt" run "$ANDROID/apk_from_aab.sh" app.aab out.apk
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"has no usable storeFile/keyAlias"* ]]
+}
+
 @test "resolve: version and build number come from pubspec" {
   mkdir -p "$TMP/app/.ci"
   write_valid_config "$TMP/app/.ci/config.yaml"

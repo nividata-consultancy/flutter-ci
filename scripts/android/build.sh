@@ -61,6 +61,13 @@ main() {
         cp "$src" "$aab"
         ;;
       apk)
+        apk="$OUT_DIR/$base.apk"
+        # With an AAB already built, make the APK from it: a second Gradle
+        # build takes as long again and can fill the runner's disk.
+        if [[ -n "$aab" ]]; then
+          "$_DIR/apk_from_aab.sh" "$aab" "$apk"
+          continue
+        fi
         log_step "flutter build apk ${args[*]}"
         flutter build apk "${args[@]}"
         local src=""
@@ -72,7 +79,6 @@ main() {
           src="$(_newest build/app/outputs '*-release.apk')"
         fi
         [[ -n "$src" ]] || die "flutter build apk produced no .apk." "TROUBLESHOOTING.md#android-build-fails"
-        apk="$OUT_DIR/$base.apk"
         cp "$src" "$apk"
         ;;
       *) die "Unknown artifact type '$kind'." "CONFIG_REFERENCE.md#android" ;;

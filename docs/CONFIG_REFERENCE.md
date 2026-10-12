@@ -138,8 +138,10 @@ environments:
 | `destinations` | map | none | See [Destinations](#destinations) |
 
 CI always builds an **APK**. That APK goes to Firebase and Drive, and is kept on the
-GitHub run (Actions → run → Artifacts). When Play is enabled, CI also builds an **AAB**,
-only for the Play upload, because Play accepts nothing else. Files are named
+GitHub run (Actions → run → Artifacts). When Play is enabled, CI also builds an **AAB**
+for the Play upload, because Play accepts nothing else. The APK is then made from that
+AAB with Google's `bundletool` (a universal APK with every ABI, signed with the same
+upload key) instead of a second Gradle build. Files are named
 `<name>-<env>-<version>-<build>.apk`. Version and build number come from `pubspec.yaml`.
 
 ## Destinations

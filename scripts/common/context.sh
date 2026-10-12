@@ -117,7 +117,8 @@ resolve_context() {
     _ctx PLAYSTORE_TESTING_TRACK "$testing"
     _ctx PLAYSTORE_PRODUCTION "$production"
     _ctx PLAYSTORE_STATUS "$(cfg "$dest.playstore.status" completed)"
-    # Always the APK; Play only accepts app bundles, so add the AAB for it.
+    # Always the APK; Play only accepts app bundles, so add the AAB for it
+    # (build.sh then makes the APK from the AAB).
     if [[ "$PLAYSTORE_ENABLED" == "true" ]]; then
       _ctx ANDROID_ARTIFACTS "aab apk"
     else

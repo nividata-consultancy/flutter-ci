@@ -6,6 +6,12 @@ in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations)
 
 ## [Unreleased]
 
+### Changed
+- Android: when Play is enabled, the APK is made from the AAB with `bundletool`
+  1.18.3 (a universal APK, signed with the same upload key) instead of a second Gradle
+  build. Release builds take about half as long and use much less disk. Apps without
+  Play still get a single Gradle APK build.
+
 ## [2.0.1] - 2026-10-12
 
 ### Fixed
