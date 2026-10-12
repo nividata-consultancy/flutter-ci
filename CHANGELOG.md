@@ -1,10 +1,18 @@
 # Changelog
 
 All notable changes to flutter-ci. Versions follow [SemVer](https://semver.org/);
-apps track the major tag (`v1`). Breaking changes and migrations are described
+apps track the major tag (`v2`). Breaking changes and migrations are described
 in [docs/maintainers/MAINTAINING.md](docs/maintainers/MAINTAINING.md#migrations).
 
 ## [Unreleased]
+
+## [2.0.1] - 2026-10-12
+
+### Fixed
+- Android: GitHub-hosted Linux runners could run out of disk ("No space left on
+  device", a runner crash). A new **Free disk space** step deletes preinstalled tools
+  the build doesn't use (.NET, Swift, Haskell, CodeQL, browsers, Docker images) before
+  setting up Flutter. The Android SDK is kept; self-hosted runners are not touched.
 
 ## [2.0.0] - 2026-10-12
 

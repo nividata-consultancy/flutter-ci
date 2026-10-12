@@ -94,6 +94,10 @@ GitHub's runners and installed automatically on Xcode Cloud. On your Mac, run
 - `Flavor … not found`: `android.flavor` must match `productFlavors`, or be removed.
 - The build is signed with debug keys: the Gradle file doesn't read `key.properties`
   ([ANDROID_SETUP.md](ANDROID_SETUP.md#step-3-signing-in-gradle)).
+- `No space left on device` (often as a runner crash, `System.IO.IOException`): the
+  runner's disk is full. flutter-ci v2.0.1+ frees space first (step **Free disk space**,
+  which logs `df` before and after). If it still fails on a GitHub-hosted runner, use a
+  larger runner with the `runs-on` input.
 
 ## versionCode already used
 
